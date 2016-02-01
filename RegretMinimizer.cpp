@@ -83,13 +83,6 @@ void RegretMinimizer::train(int iterations) {
     std::cout << "\n";
   }
   std::cout << std::endl;
-  std::vector<double> exploits = exploitability();
-  std::cout << "Exploitability:";
-  for (int index = 0; index < exploits.size(); ++index) {
-    std::cout << " " << exploits[index];
-  }
-  std::cout << "\n";
-  std::cout << std::endl;
 
   for (int iteration = 0; iteration < iterations; ++iteration) {
     std::cout << "Iteration: " << iteration << "\n";
@@ -126,8 +119,9 @@ void RegretMinimizer::train(int iterations) {
 	alternative[player] = index;
 	double regret =  ((*payout)(alternative))[player] - ((*payout)(actions))[player];
 	std::cout << " " << regret;
-	if (regret > 0) {
-	  regrets[player][index] += regret;
+	regrets[player][index] += regret;
+	if (regrets[player][index] < 0) {
+	  regrets[player][index] = 0;
 	}
       }
       std::cout << "\n";
@@ -140,14 +134,14 @@ void RegretMinimizer::train(int iterations) {
       }
       std::cout << "\n";
     }
-    std::vector<double> exploits = exploitability();
-    std::cout << "Exploitability:";
-    for (int index = 0; index < exploits.size(); ++index) {
-      std::cout << " " << exploits[index];
-    }
-    std::cout << "\n";
     std::cout << std::endl;
   }
+  std::vector<double> exploits = exploitability();
+  std::cout << "Exploitability:";
+  for (int index = 0; index < exploits.size(); ++index) {
+    std::cout << " " << exploits[index];
+  }
+  std::cout << "\n";
 }
 
 int RegretMinimizer::chooseMove(std::vector<double> strategy) {
