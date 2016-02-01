@@ -17,8 +17,10 @@ class RegretMinimizer {
   RegretMinimizer(std::shared_ptr<PayoutMatrix> matrix);
   void train(int iterations);
   std::vector<double> strategyProfile(int player);
+  std::vector<double> exploitability();
  private:
   int chooseMove(std::vector<double> strategy);
+  bool permute(std::vector<int>& actions);
   std::shared_ptr<PayoutMatrix> payout;
   Random random;
   int numPlayers;
