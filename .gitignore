@@ -1,0 +1,7 @@
+#build files
+CMake*
+Makefile
+*.o
+
+#Executables
+CFR
