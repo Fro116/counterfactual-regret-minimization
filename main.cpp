@@ -12,6 +12,6 @@
 int main(int argc, char *argv[]) {
   std::shared_ptr<PayoutMatrix> payout(new TicTacToePayoutMatrix);
   RegretMinimizer trainer(payout);
-  trainer.train(10000);
+  trainer.train(1000000);
   return 0;
 }

@@ -1,4 +1,5 @@
 #include "TicTacToePayoutMatrix.h"
+#include <limits>
 
 TicTacToePayoutMatrix::TicTacToePayoutMatrix() : payout{{0,-1,1},{1,0,-1},{-1,1,0}} {
 
