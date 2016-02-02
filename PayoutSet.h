@@ -11,16 +11,18 @@
 #include <cassert>
 #include <limits>
 
+/** S is the type of actions. T is the type of informationSets **/
+template <typename S, typename T>
 class PayoutSet {
  public:
-  using type = std::vector<std::string>>;
   PayoutSet();
-  virtual std::vector<double> value() (type informationSet) = 0;
-  virtual type initialSet() = 0;
-  virtual bool isTerminalSet(type informationSet) = 0;
+  virtual std::vector<double> value() = 0;
+  virtual std::vector<T> beginGame() = 0;
+  virtual std::vector<T> makeMove(std::vector<T> sets, S action) = 0;
+  virtual bool isTerminalSet() = 0;
   virtual int numPlayers() = 0;
-  virtual int playerToAct(type informationSet) = 0;
-  virtual std::vector<type> actions(type informationSet) = 0;
+  virtual int playerToAct() = 0;
+  virtual std::vector<S> actions() = 0;
 
  private:
 
