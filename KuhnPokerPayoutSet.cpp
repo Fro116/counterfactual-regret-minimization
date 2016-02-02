@@ -2,13 +2,13 @@
 #include "Random.h"
 
 KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
-  KuhnPokerGameState()
+  gameState()
 {
 
 }
 
 std::vector<double> KuhnPokerPayoutSet::value() {
-  assert(gameState.isTerminal);
+  assert(gameState.isTerminalState);
   std::vector<double> results;
   if (gameState.winningPlayer == 0) {
     results.push_back(gameState.pot);
@@ -22,10 +22,10 @@ std::vector<double> KuhnPokerPayoutSet::value() {
 }
   
 std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::beginGame() {
-  std::vector<KuhnPokerInformationSet>> sets;
-  KuhnPokerInformationState set1(0, gameState.p1Card, gameState.pot);
+  std::vector<KuhnPokerInformationSet> sets;
+  KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
   sets.push_back(set1);
-  KuhnPokerInformationState set2(1, gameState.p2Card, gameState.pot);
+  KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
   sets.push_back(set2);
   return sets;
 }
@@ -48,7 +48,7 @@ std::vector<std::string> KuhnPokerPayoutSet::actions() {
 
 std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::makeMove(std::vector<KuhnPokerInformationSet> sets, std::string action) {
   gameState.makeMove(action);
-  for (KuhnPokerInformationSet set : informationSets) {
+  for (KuhnPokerInformationSet set : sets) {
     set.makeMove(action, gameState.pot);
   }
   return sets;
@@ -136,8 +136,8 @@ void KuhnPokerPayoutSet::KuhnPokerGameState::makeMove(std::string action) {
   }
 }
 
-KuhnPokerInformationSet::KuhnPokerInfomationSet(int player, std::string card, int pot) :
-  player(player).
+KuhnPokerInformationSet::KuhnPokerInformationSet(int player, std::string card, int pot) :
+  player(player),
   pot(pot),
   card(card)
 {
@@ -145,6 +145,6 @@ KuhnPokerInformationSet::KuhnPokerInfomationSet(int player, std::string card, in
 }
 
 void KuhnPokerInformationSet::makeMove(std::string action, int pot) {
-  actions.push_back(action);
-  this.pot = pot;
+  history.push_back(action);
+  this->pot = pot;
 }

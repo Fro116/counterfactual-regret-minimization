@@ -15,7 +15,6 @@
 template <typename S, typename T>
 class PayoutSet {
  public:
-  PayoutSet();
   virtual std::vector<double> value() = 0;
   virtual std::vector<T> beginGame() = 0;
   virtual std::vector<T> makeMove(std::vector<T> sets, S action) = 0;

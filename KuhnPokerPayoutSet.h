@@ -47,8 +47,8 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
 
 class KuhnPokerInformationSet {
  public:
-  KuhnPokerInfomationSet(int player, std::string card, int pot);
-  void makeMove(std::string action);
+  KuhnPokerInformationSet(int player, std::string card, int pot);
+  void makeMove(std::string action, int pot);
  private:
   std::string card;
   int player;
