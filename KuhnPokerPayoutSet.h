@@ -16,7 +16,7 @@
 class KuhnPokerGameState;
 class KuhnPokerInformationSet;
 
-class KuhnPokerPayoutSet : public PayoutSet {
+class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet> {
  public:
   KuhnPokerPayoutSet();
   std::vector<double> value();
