@@ -7,16 +7,16 @@ KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
 
 }
 
-std::vector<double> KuhnPokerPayoutSet::value() {
+std::vector<double> KuhnPokerPayoutSet::payout() {
   assert(gameState.isTerminalState);
   std::vector<double> results;
   if (gameState.winningPlayer == 0) {
-    results.push_back(gameState.pot);
-    results.push_back(0);
+    results.push_back(gameState.pot - gameState.potContributions[0]);
+    results.push_back(-gameState.potContributions[1]);
   }
   else if (gameState.winningPlayer == 1) {
-    results.push_back(0);
-    results.push_back(gameState.pot);
+    results.push_back(-gameState.potContributions[0]);
+    results.push_back(gameState.pot - gameState.potContributions[1]);
   }
   return results;
 }
@@ -30,7 +30,7 @@ std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::beginGame() {
   return sets;
 }
 
-bool KuhnPokerPayoutSet::isTerminalSet() {
+bool KuhnPokerPayoutSet::isTerminalState() {
   return gameState.isTerminalState;
 }
 
@@ -58,7 +58,8 @@ KuhnPokerPayoutSet::KuhnPokerGameState::KuhnPokerGameState() :
   pot(2),
   playerToAct(0),
   winningPlayer(-1),
-  history()
+  history(),
+  potContributions()
 {
   Random rand;
   int p1 = 1;
@@ -79,6 +80,8 @@ KuhnPokerPayoutSet::KuhnPokerGameState::KuhnPokerGameState() :
     p2Card = "K";
   else
     p2Card = "Q";
+  potContributions.push_back(1);
+  potContributions.push_back(1);
 }
 
 std::vector<std::string> KuhnPokerPayoutSet::KuhnPokerGameState::actions() {
@@ -94,7 +97,7 @@ std::vector<std::string> KuhnPokerPayoutSet::KuhnPokerGameState::actions() {
     response.push_back("CHECK");
     return response;
   }
-  if (history.size() == 1 && history[0] == "BET") {
+  if ((history.size() == 1 || history.size() == 2) && history[history.size()-1] == "BET") {
     std::vector<std::string> response;
     response.push_back("FOLD");
     response.push_back("CALL");
@@ -105,13 +108,32 @@ std::vector<std::string> KuhnPokerPayoutSet::KuhnPokerGameState::actions() {
 }
 
 void KuhnPokerPayoutSet::KuhnPokerGameState::makeMove(std::string action) {
+  history.push_back(action);
   if (action == "BET") {
     pot += 1;
+    potContributions[playerToAct] += 1;
     playerToAct = 1 - playerToAct;
   }
-  else if (action == "CHECK") {
+  else if (action == "CHECK" && history.size() == 1) {
     pot += 0;
     playerToAct = 1 - playerToAct;
+  }
+  else if (action == "CHECK" && history.size() == 2) {
+    pot += 0;
+    winningPlayer = 1 - playerToAct;
+    if (p1Card == "A") {
+      winningPlayer = 0;
+    }
+    else if (p2Card == "A") {
+      winningPlayer = 1;
+    }
+    else if (p1Card == "K") {
+      winningPlayer = 0;
+    }
+    else if (p2Card == "K") {
+      winningPlayer = 1;
+    }
+    isTerminalState = true;
   }
   else if (action == "FOLD") {
     pot += 0;
@@ -119,6 +141,7 @@ void KuhnPokerPayoutSet::KuhnPokerGameState::makeMove(std::string action) {
     isTerminalState = true;
   }
   else if (action == "CALL") {
+    potContributions[playerToAct] += 1;
     pot += 1;
     if (p1Card == "A") {
       winningPlayer = 0;

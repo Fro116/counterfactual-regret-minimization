@@ -15,10 +15,10 @@
 template <typename S, typename T>
 class PayoutSet {
  public:
-  virtual std::vector<double> value() = 0;
+  virtual std::vector<double> payout() = 0;
   virtual std::vector<T> beginGame() = 0;
   virtual std::vector<T> makeMove(std::vector<T> sets, S action) = 0;
-  virtual bool isTerminalSet() = 0;
+  virtual bool isTerminalState() = 0;
   virtual int numPlayers() = 0;
   virtual int playerToAct() = 0;
   virtual std::vector<S> actions() = 0;
