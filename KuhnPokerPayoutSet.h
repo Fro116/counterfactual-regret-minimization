@@ -20,8 +20,10 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
  public:
   KuhnPokerPayoutSet();
   std::vector<double> payout();
-  std::vector<KuhnPokerInformationSet> beginGame();
-  std::vector<KuhnPokerInformationSet> makeMove(std::vector<KuhnPokerInformationSet> sets, std::string action);
+  void beginGame();
+  void makeMove(std::string action);
+  std::vector<KuhnPokerInformationSet> sets();
+  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> deepCopy();
   bool isTerminalState();
   int numPlayers();
   int playerToAct();
@@ -44,6 +46,7 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
     int winningPlayer;
   };
   KuhnPokerGameState gameState;
+  std::vector<KuhnPokerInformationSet> sets;
 };
 
 class KuhnPokerInformationSet {

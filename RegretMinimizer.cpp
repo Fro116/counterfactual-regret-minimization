@@ -134,14 +134,14 @@ void RegretMinimizer::train(int iterations) {
       }
       std::cout << "\n";
     }
+    std::vector<double> exploits = exploitability();
+    std::cout << "Exploitability:";
+    for (int index = 0; index < exploits.size(); ++index) {
+      std::cout << " " << exploits[index];
+    }
+    std::cout << "\n";
     std::cout << std::endl;
   }
-  std::vector<double> exploits = exploitability();
-  std::cout << "Exploitability:";
-  for (int index = 0; index < exploits.size(); ++index) {
-    std::cout << " " << exploits[index];
-  }
-  std::cout << "\n";
 }
 
 int RegretMinimizer::chooseMove(std::vector<double> strategy) {

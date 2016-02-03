@@ -2,9 +2,20 @@
 #include "Random.h"
 
 KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
-  gameState()
+  gameState(),
+  sets()
 {
+  for (int i = 0; i < gameState.numPlayers(); ++i) {
+    std::vector<KuhnPokerInformationSet> set;
+    sets.push_back(set);
+  }
+}
 
+std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayoutSet::deepCopy() {
+  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> copy(new KuhnPokerPayoutSet);
+  copy->gameState = gameState;
+  copy->sets = sets;
+  return copy;
 }
 
 std::vector<double> KuhnPokerPayoutSet::payout() {
@@ -21,13 +32,11 @@ std::vector<double> KuhnPokerPayoutSet::payout() {
   return results;
 }
   
-std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::beginGame() {
-  std::vector<KuhnPokerInformationSet> sets;
+void KuhnPokerPayoutSet::beginGame() {
   KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
   sets.push_back(set1);
   KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
   sets.push_back(set2);
-  return sets;
 }
 
 bool KuhnPokerPayoutSet::isTerminalState() {
@@ -46,11 +55,14 @@ std::vector<std::string> KuhnPokerPayoutSet::actions() {
   return gameState.actions();
 }
 
-std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::makeMove(std::vector<KuhnPokerInformationSet> sets, std::string action) {
+void KuhnPokerPayoutSet::makeMove(std::vector<KuhnPokerInformationSet> sets, std::string action) {
   gameState.makeMove(action);
   for (KuhnPokerInformationSet set : sets) {
     set.makeMove(action, gameState.pot);
   }
+}
+
+std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::sets() {
   return sets;
 }
 
