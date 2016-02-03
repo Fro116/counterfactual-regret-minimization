@@ -10,13 +10,13 @@
 #include <memory>
 #include <cassert>
 #include <limits>
-#include <unordered_map>
+#include <map>
 #include "Random.h"
 
 #include "PayoutSet.h"
 
 /** S is the type of actions. T is the type of informationSets **/
-template <typename S, typename T>
+template <class S, class T>
 class CounterFactualRegretMinimizer {
  public:
   CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S,T>> payout);
@@ -28,8 +28,38 @@ class CounterFactualRegretMinimizer {
   std::shared_ptr<PayoutSet<S,T>> payout;
   Random random;
   int numPlayers;
-  std::vector<std::unordered_map<T,std::vector<std::double>>> regrets;
-  std::vector<std::unordered_map<T,std::vector<std::double>>> strategies;
+  std::vector<std::map<T,std::vector<double>>> regrets;
+  std::vector<std::map<T,std::vector<double>>> strategies;
 };
+
+
+template <class S, class T>
+CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S,T>> payout) :
+  payout(payout),
+  random(),
+  numPlayers(payout->numPlayers()),
+  regrets(),
+  strategies()
+{
+
+}
+
+template <class S, class T>
+void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
+
+}
+
+template <class S, class T>
+std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, T set) {
+  std::vector<double> a;
+  return a;
+}
+
+template <class S, class T>
+T CounterFactualRegretMinimizer<S, T>::chooseMove(std::vector<double> strategy, std::vector<T> actions) {
+  T why;
+  return why;
+}
+
 
 #endif
