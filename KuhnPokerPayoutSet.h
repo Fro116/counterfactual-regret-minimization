@@ -22,7 +22,7 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
   std::vector<double> payout();
   void beginGame();
   void makeMove(std::string action);
-  std::vector<KuhnPokerInformationSet> sets();
+  std::vector<KuhnPokerInformationSet> infoSets();
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> deepCopy();
   bool isTerminalState();
   int numPlayers();
@@ -53,11 +53,28 @@ class KuhnPokerInformationSet {
  public:
   KuhnPokerInformationSet(int player, std::string card, int pot);
   void makeMove(std::string action, int pot);
+  friend bool operator== (const KuhnPokerInformationSet& left, const KuhnPokerInformationSet& right);
+  template<class T>
+  friend class std::hash;
  private:
   std::string card;
   int player;
   int pot;
   std::vector<std::string> history;
 };
+
+namespace std {
+  template <> struct hash<KuhnPokerInformationSet> {
+    std::size_t operator()(const KuhnPokerInformationSet& k) const {
+      std::size_t result = hash<std::string>()(k.card);
+      result = result ^ (hash<int>()(k.player) << 1);
+      result = result ^ (hash<int>()(k.pot) << 1);
+      for (std::string str : k.history) {
+	result = result ^ (hash<std::string>()(str) << 1);
+      }
+      return result;
+    }
+  };
+}
 
 #endif

@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[]) {
   Random rand;
-  std::shared_ptr<KuhnPokerPayoutSet> game(new KuhnPokerPayoutSet);
+  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> game(new KuhnPokerPayoutSet);
   CounterFactualRegretMinimizer<std::string, KuhnPokerInformationSet> trainer(game);
 //   std::vector<KuhnPokerInformationSet> states = hi.beginGame();
 //   while (!hi.isTerminalState()) {
