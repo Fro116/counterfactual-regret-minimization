@@ -12,7 +12,7 @@
 #include <limits>
 
 /** S is the type of actions. T is the type of informationSets **/
-template <typename S, typename T>
+template <class S, class T>
 class PayoutSet {
  public:
   virtual std::vector<double> payout() = 0;
