@@ -11,31 +11,32 @@
 #include <cassert>
 #include <limits>
 #include <map>
+#include <unordered_map>
 #include "Random.h"
 
 #include "PayoutSet.h"
 
-/** S is the type of actions. T is the type of informationSets **/
+/**S is the type of actions. T is the type of informationSets. **/
 template <class S, class T>
 class CounterFactualRegretMinimizer {
  public:
-  CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S,T>> payout);
+  CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout);
   void train(int iterations);
  private:
-  std::vector<double> strategyProfile(int player, T set);
+  std::vector<double> strategyProfile(int player, T set, std::vector<S> actions);
   int chooseMove(std::vector<double> strategy);
-  void train(std::shared_ptr<PayoutSet<S,T>> payouts);
+  std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts);
 
-  std::shared_ptr<PayoutSet<S,T>> payout;
+  std::shared_ptr<PayoutSet<S, T>> payout;
   Random random;
   int numPlayers;
-  std::vector<std::map<T,std::vector<double>>> regrets;
-  std::vector<std::map<T,std::vector<double>>> strategies;
+  std::vector<std::unordered_map<T,std::vector<double>>> regrets;
+  std::vector<std::unordered_map<T,std::vector<double>>> strategies;
 };
 
 
 template <class S, class T>
-CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S,T>> payout) :
+CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout) :
   payout(payout),
   random(),
   numPlayers(payout->numPlayers()),
@@ -43,8 +44,8 @@ CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_p
   strategies()
 {
   for (int i = 0; i < numPlayers; ++i) {
-    std::map<T,std::vector<double>> regret;
-    std::map<T,std::vector<double>> strategy;
+    std::unordered_map<T,std::vector<double>> regret;
+    std::unordered_map<T,std::vector<double>> strategy;
     regrets.push_back(regret);
     strategies.push_back(strategy);
   }
@@ -60,17 +61,17 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S,T>> payouts) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T>> payouts) {
   if (payouts->isTerminalState()) {
     return payouts->payout();
   }
   //Find the strategy profile
-  std::vector<T> sets = payouts->sets();
+  std::vector<T> sets = payouts->infoSets();
   int player = payouts->playerToAct();
   std::vector<S> actions = payouts->actions();
-  std::vector<double> curStrategy = strategyProfile(player, sets[player]);
+  std::vector<double> curStrategy = strategyProfile(player, sets[player], actions);
   //Update cumulative strategy
-  std::vector<double>& cumulativeStrategy = strategies[player][set];
+  std::vector<double>& cumulativeStrategy = strategies[player][sets[player]];
   //If first time encountering set
   while (actions.size() > cumulativeStrategy.size()) {
     cumulativeStrategy.push_back(0);
@@ -84,7 +85,7 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
   std::vector<double> values;
   std::vector<double> outcome;
   for (int i = 0; i < actions.size(); ++i) {
-    std::shared_ptr<PayoutSet> copy = payouts->deepCopy();
+    std::shared_ptr<PayoutSet<S, T>> copy = payouts->deepCopy();
     copy->makeMove(actions[i]);
     std::vector<double> results = train(copy); //forward passing of history and backward passing of rewards
     double moveValue = results[player];
@@ -94,21 +95,20 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
     }
   }
   //Compute regrets
-  std::vector<double>& cumulativeRegrets = regrets[player][set];
+  std::vector<double>& cumulativeRegrets = regrets[player][sets[player]];
   //If first time encountering set
   while (actions.size() > cumulativeRegrets.size()) {
     cumulativeRegrets.push_back(0);
   }
   for (int i = 0; i < cumulativeRegrets.size(); ++i) {
-    cumulativeRegrets[i] += (values[i] - values[moveIndex])
+    cumulativeRegrets[i] += (values[i] - values[moveIndex]);
   }
-  return results;
+  return outcome;
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, T set) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, T set, std::vector<S> actions) {
   std::vector<double>& cumulativeRegrets = regrets[player][set];
-  std::vector<S> actions = payouts->actions();
   //If first time encountering set
   while (actions.size() > cumulativeRegrets.size()) {
     cumulativeRegrets.push_back(0);

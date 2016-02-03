@@ -5,16 +5,26 @@ KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
   gameState(),
   sets()
 {
-  for (int i = 0; i < gameState.numPlayers(); ++i) {
-    std::vector<KuhnPokerInformationSet> set;
-    sets.push_back(set);
-  }
+
+}
+
+bool operator==(const KuhnPokerInformationSet& left, const KuhnPokerInformationSet& right) {
+  if (left.card != right.card)
+    return false;
+  if (left.player != right.player)
+    return false;
+  if (left.pot != right.pot)
+    return false;
+  if (left.history != right.history)
+    return false;
+  return true;
 }
 
 std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayoutSet::deepCopy() {
-  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> copy(new KuhnPokerPayoutSet);
+  std::shared_ptr<KuhnPokerPayoutSet> copy;
   copy->gameState = gameState;
   copy->sets = sets;
+  //  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> copy2(new KuhnPokerPayoutSet);
   return copy;
 }
 
@@ -55,14 +65,14 @@ std::vector<std::string> KuhnPokerPayoutSet::actions() {
   return gameState.actions();
 }
 
-void KuhnPokerPayoutSet::makeMove(std::vector<KuhnPokerInformationSet> sets, std::string action) {
+void KuhnPokerPayoutSet::makeMove(std::string action) {
   gameState.makeMove(action);
   for (KuhnPokerInformationSet set : sets) {
     set.makeMove(action, gameState.pot);
   }
 }
 
-std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::sets() {
+std::vector<KuhnPokerInformationSet> KuhnPokerPayoutSet::infoSets() {
   return sets;
 }
 
