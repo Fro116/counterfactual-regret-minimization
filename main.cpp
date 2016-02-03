@@ -8,10 +8,25 @@
 
 #include "TicTacToePayoutMatrix.h"
 #include "RegretMinimizer.h"
-
+#include "KuhnPokerPayoutSet.h"
+#include "Random.h"
 int main(int argc, char *argv[]) {
-  std::shared_ptr<PayoutMatrix> payout(new TicTacToePayoutMatrix);
-  RegretMinimizer trainer(payout);
-  trainer.train(1000000);
+  Random rand;
+  KuhnPokerPayoutSet hi;
+  std::vector<KuhnPokerInformationSet> states = hi.beginGame();
+  while (!hi.isTerminalState()) {
+  std::cout << "PLAYER: " << hi.playerToAct() << std::endl;
+  std::cout << "OPTIONS: " << std::endl;
+  for (std::string name : hi.actions()) {
+    std::cout << name << std::endl;
+  }
+  std::string option = hi.actions()[rand.integer(0, hi.actions().size()-1)];
+  states = hi.makeMove(states, option);
+  std::cout << "CHOICE: " << option << std::endl;
+  }
+  std::cout << "VALUE: " << hi.payout()[0] << " " << hi.payout()[1] << std::endl;
+//   std::shared_ptr<PayoutMatrix> payout(new TicTacToePayoutMatrix);
+//   RegretMinimizer trainer(payout);
+//   trainer.train(1000000);
   return 0;
 }
