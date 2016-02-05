@@ -11,9 +11,7 @@
 #include <cassert>
 #include <limits>
 
-/** R is the specialized PayoutSet. S is the type of actions. T is the type of informationSets. **/
-/** All instantiations of T must inject a hash function into std for use with std::unordered_map **/
-/** All instantiations of T must overload the equality function **/
+/** S is the type of actions. T is the type of informationSets. **/
 template <class S, class T>
 class PayoutSet {
  public:
@@ -26,6 +24,7 @@ class PayoutSet {
   virtual int numPlayers() = 0;
   virtual int playerToAct() = 0;
   virtual std::vector<S> actions() = 0;
+  virtual std::string uniqueIdentifier(T set) = 0;
  private:
 
 };
