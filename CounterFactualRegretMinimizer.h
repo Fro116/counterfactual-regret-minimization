@@ -69,6 +69,8 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
 
 template <class S, class T>
 std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double> factual, std::vector<double> counterfactual) {
+  std::cout << "Factual " << factual[0] << " " << factual[1] << "\n";
+  std::cout << "Counterfactual " << counterfactual[0] << " " << counterfactual[1] << "\n";
   if (payouts->isTerminalState()) {
     return payouts->payout();
   }
@@ -78,19 +80,13 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
   int player = payouts->playerToAct();
   std::vector<S> actions = payouts->actions();
   std::vector<double> curStrategy = strategyProfile(player, sets[player], actions);
-  //Update cumulative strategy
-  std::cout << "Updating strategy profile " << "\n";
   std::vector<double>& cumulativeStrategy = strategies[player][payout->uniqueIdentifier(sets[player])];
-  //If first time encountering set
   while (actions.size() > cumulativeStrategy.size()) {
     cumulativeStrategy.push_back(0);
   }
   for (int i = 0; i < cumulativeStrategy.size(); ++i) {
     cumulativeStrategy[i] += curStrategy[i] * factual[player];
   }
-  //Choose a move
-  std::cout << "Choosing move " << "\n";
-  int moveIndex = chooseMove(curStrategy);
   //Calculate utilities
   std::cout << "Calculating utilities " << "\n";
   std::vector<double> values;
@@ -109,11 +105,13 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
     }
     std::vector<double> newFactual = factual;
     newFactual[player] *= curStrategy[i];
+    if (curStrategy[i] > 1) {
+      std::cout << " I KNEW IT" <<std::endl;
+    } 
     std::vector<double> results = train(copy, newFactual, newCounterfactual); //forward passing of history and backward passing of rewards
     double moveValue = results[player];
     values.push_back(moveValue);
     for (int index = 0; index < results.size(); ++index) { 
-      std::cout << "INDEX: " << results.size() << "\n";
       outcome[index] += results[index] * curStrategy[i];
     }
   }
@@ -124,7 +122,7 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
     cumulativeRegrets.push_back(0);
   }
   for (int i = 0; i < cumulativeRegrets.size(); ++i) {
-    cumulativeRegrets[i] += (values[i] - values[moveIndex]) * counterfactual[player];
+    cumulativeRegrets[i] += (values[i] - outcome[player]) * counterfactual[player];
     if (cumulativeRegrets[i] < 0) {
       cumulativeRegrets[i] = 0;
     }
@@ -139,8 +137,8 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int pla
   while (actions.size() > cumulativeRegrets.size()) {
     cumulativeRegrets.push_back(0);
   }
-  int totalRegrets = 0;
-  for (int regret : cumulativeRegrets) {
+  double totalRegrets = 0;
+  for (double regret : cumulativeRegrets) {
     totalRegrets += regret;
   }
   std::vector<double> strategy;
@@ -152,6 +150,9 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int pla
   else {
     for (int i = 0; i < cumulativeRegrets.size(); ++i) {
       strategy.push_back(cumulativeRegrets[i]/totalRegrets);
+      if(cumulativeRegrets[i]/totalRegrets > 1) {
+	std::cout << "WHYYYYYYY " << cumulativeRegrets[i] << " " << totalRegrets << std::endl;
+      }
     }
   }
   return strategy;
@@ -176,7 +177,8 @@ void CounterFactualRegretMinimizer<S, T>::saveStrategy(std::string filename) {
   for (int i = 0; i < numPlayers; ++i) {
     file << "Player " << i << "\n";
     for (auto it = strategies[i].begin(); it != strategies[i].end(); ++it) {
-      file << it->first << "\t";
+      file << it->first << " ";
+      file << it->second.size() << " ";
       double total = 0;
       for (double value : it->second) {
 	total += value;

@@ -16,9 +16,9 @@ std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayout
 
 std::string KuhnPokerPayoutSet::uniqueIdentifier(KuhnPokerInformationSet set) {
   std::string hash;
-  hash = set.card + " " + std::to_string(set.player) + " " + std::to_string(set.pot);
+  hash = set.card + "_" + std::to_string(set.player) + "_" + std::to_string(set.pot);
   for (std::string str : set.history) {
-    hash += " " + str;
+    hash += "_" + str;
   }
   return hash;
 }
@@ -118,8 +118,8 @@ std::vector<std::string> KuhnPokerPayoutSet::KuhnPokerGameState::actions() {
   }
   if ((history.size() == 1 || history.size() == 2) && history[history.size()-1] == "BET") {
     std::vector<std::string> response;
-    response.push_back("FOLD");
     response.push_back("CALL");
+    response.push_back("FOLD");
     return response;
   }
   std::vector<std::string> response;

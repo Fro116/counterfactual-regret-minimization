@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   Random rand;
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> game(new KuhnPokerPayoutSet);
   CounterFactualRegretMinimizer<std::string, KuhnPokerInformationSet> trainer(game);
-  trainer.train(1000);
+  trainer.train(100000);
   trainer.saveStrategy("tmp");
 //   KuhnPokerPayoutSet hi;
 //   hi.beginGame();
