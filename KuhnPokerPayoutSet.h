@@ -10,6 +10,7 @@
 #include <memory>
 #include <cassert>
 #include <limits>
+#include "Random.h"
 
 #include "PayoutSet.h"
 
@@ -28,6 +29,7 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
   int numPlayers();
   int playerToAct();
   std::vector<std::string> actions();
+  std::string uniqueIdentifier(KuhnPokerInformationSet set);
  private:
   class KuhnPokerGameState {
     friend class KuhnPokerPayoutSet;
@@ -36,6 +38,7 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
     std::vector<std::string> actions();
     void makeMove(std::string action);
   private:
+    static Random rand;
     std::string p1Card;
     std::string p2Card;
     int pot;
@@ -53,9 +56,7 @@ class KuhnPokerInformationSet {
  public:
   KuhnPokerInformationSet(int player, std::string card, int pot);
   void makeMove(std::string action, int pot);
-  friend bool operator== (const KuhnPokerInformationSet& left, const KuhnPokerInformationSet& right);
-  template<class T>
-  friend class std::hash;
+  friend class KuhnPokerPayoutSet;
  private:
   std::string card;
   int player;
@@ -63,18 +64,6 @@ class KuhnPokerInformationSet {
   std::vector<std::string> history;
 };
 
-namespace std {
-  template <> struct hash<KuhnPokerInformationSet> {
-    std::size_t operator()(const KuhnPokerInformationSet& k) const {
-      std::size_t result = hash<std::string>()(k.card);
-      result = result ^ (hash<int>()(k.player) << 1);
-      result = result ^ (hash<int>()(k.pot) << 1);
-      for (std::string str : k.history) {
-	result = result ^ (hash<std::string>()(str) << 1);
-      }
-      return result;
-    }
-  };
-}
+
 
 #endif

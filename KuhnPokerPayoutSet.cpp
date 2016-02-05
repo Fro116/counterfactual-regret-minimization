@@ -2,30 +2,25 @@
 #include "Random.h"
 
 KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
-  gameState(),
   sets()
 {
 
 }
 
-bool operator==(const KuhnPokerInformationSet& left, const KuhnPokerInformationSet& right) {
-  if (left.card != right.card)
-    return false;
-  if (left.player != right.player)
-    return false;
-  if (left.pot != right.pot)
-    return false;
-  if (left.history != right.history)
-    return false;
-  return true;
-}
-
 std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayoutSet::deepCopy() {
-  std::shared_ptr<KuhnPokerPayoutSet> copy;
+  std::shared_ptr<KuhnPokerPayoutSet> copy(new KuhnPokerPayoutSet);
   copy->gameState = gameState;
   copy->sets = sets;
-  //  std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> copy2(new KuhnPokerPayoutSet);
   return copy;
+}
+
+std::string KuhnPokerPayoutSet::uniqueIdentifier(KuhnPokerInformationSet set) {
+  std::string hash;
+  hash = set.card + " " + std::to_string(set.player) + " " + std::to_string(set.pot);
+  for (std::string str : set.history) {
+    hash += " " + str;
+  }
+  return hash;
 }
 
 std::vector<double> KuhnPokerPayoutSet::payout() {
@@ -43,6 +38,8 @@ std::vector<double> KuhnPokerPayoutSet::payout() {
 }
   
 void KuhnPokerPayoutSet::beginGame() {
+  gameState = KuhnPokerGameState();
+  sets.clear();
   KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
   sets.push_back(set1);
   KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
@@ -67,7 +64,7 @@ std::vector<std::string> KuhnPokerPayoutSet::actions() {
 
 void KuhnPokerPayoutSet::makeMove(std::string action) {
   gameState.makeMove(action);
-  for (KuhnPokerInformationSet set : sets) {
+  for (KuhnPokerInformationSet& set : sets) {
     set.makeMove(action, gameState.pot);
   }
 }
@@ -81,9 +78,9 @@ KuhnPokerPayoutSet::KuhnPokerGameState::KuhnPokerGameState() :
   playerToAct(0),
   winningPlayer(-1),
   history(),
-  potContributions()
+  potContributions(),
+  isTerminalState(false)
 {
-  Random rand;
   int p1 = 1;
   int p2 = 1;
   while (p1 == p2) {

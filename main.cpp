@@ -16,7 +16,10 @@ int main(int argc, char *argv[]) {
   Random rand;
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> game(new KuhnPokerPayoutSet);
   CounterFactualRegretMinimizer<std::string, KuhnPokerInformationSet> trainer(game);
-//   std::vector<KuhnPokerInformationSet> states = hi.beginGame();
+  trainer.train(1000);
+  trainer.saveStrategy("tmp");
+//   KuhnPokerPayoutSet hi;
+//   hi.beginGame();
 //   while (!hi.isTerminalState()) {
 //   std::cout << "PLAYER: " << hi.playerToAct() << std::endl;
 //   std::cout << "OPTIONS: " << std::endl;
@@ -24,7 +27,7 @@ int main(int argc, char *argv[]) {
 //     std::cout << name << std::endl;
 //   }
 //   std::string option = hi.actions()[rand.integer(0, hi.actions().size()-1)];
-//   states = hi.makeMove(states, option);
+//   hi.makeMove(option);
 //   std::cout << "CHOICE: " << option << std::endl;
 //   }
 //   std::cout << "VALUE: " << hi.payout()[0] << " " << hi.payout()[1] << std::endl;
