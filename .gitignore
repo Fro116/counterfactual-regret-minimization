@@ -4,4 +4,7 @@ Makefile
 *.o
 
 #Executables
-CFR
+solver
+
+#Temporary files
+tmp
