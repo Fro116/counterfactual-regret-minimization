@@ -21,7 +21,7 @@
 template <class S, class T>
 class CounterFactualRegretMinimizer {
  public:
-  CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout);
+  CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout, bool display = false);
   void train(int iterations, int numThreads);
   void saveStrategy(std::string filename);
  private:
@@ -29,10 +29,11 @@ class CounterFactualRegretMinimizer {
   std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions);
   int chooseMove(std::vector<double>& strategy);
   std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual);
-
+  
   std::shared_ptr<PayoutSet<S, T>> payout;
   Random random;
   int numPlayers;
+  bool display;
   int outputPeriod;
   std::vector<std::unordered_map<std::string,std::vector<double>>> regrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> strategies;
@@ -44,12 +45,13 @@ class CounterFactualRegretMinimizer {
 
 
 template <class S, class T>
-CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout) :
+CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout, bool display) :
   payout(payout),
   random(),
   numPlayers(payout->numPlayers()),
   regrets(),
-  strategies()
+  strategies(),
+  display(display)
 {
   for (int i = 0; i < numPlayers; ++i) {
     regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
@@ -76,7 +78,7 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
   std::shared_ptr<PayoutSet<S, T>> payoutCopy = payout->deepCopy();
   payout_mutex.unlock();
   for (int i = 0; i < iterations; ++i) {
-    if (i % outputPeriod == 0) {
+    if (display && i % outputPeriod == 0) {
       stream_mutex.lock();
       std::cout << "Iteration " << i << "\n";
       stream_mutex.unlock();
