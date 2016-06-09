@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -15,19 +14,15 @@
 
 void train() {
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> game(new KuhnPokerPayoutSet);
-  CounterFactualRegretMinimizer<std::string, KuhnPokerInformationSet> trainer(game, false);
-  trainer.train(25000,1);
+  CounterFactualRegretMinimizer<std::string, KuhnPokerInformationSet> trainer(game);
+  // trainer.load("tmp.txt");
+  trainer.train("results.txt", 2, 0.01, 10000, 1000);
+  //trainer.train(10000000, 1);
+  //trainer.save("tmp.txt");
 }
 
 int main(int argc, char *argv[]) {
-  std::thread t1(train);
-  std::thread t2(train);
-  std::thread t3(train);
-  std::thread t4(train);
-  t1.join();
-  t2.join();
-  t3.join();
-  t4.join();
+  train();
 
   //std::shared_ptr<PayoutSet<std::string, ParallelTestInformationSet>> game(new ParallelTestPayoutSet);
   //CounterFactualRegretMinimizer<std::string, ParallelTestInformationSet> trainer(game,true);
