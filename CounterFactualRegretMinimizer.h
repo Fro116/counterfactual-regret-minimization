@@ -26,21 +26,19 @@ class CounterFactualRegretMinimizer {
   void save(std::string filename);
   void load(std::string filename);
  private:
-  void train(int iterations);
-  std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions);
+  void train(int iterations, std::vector<std::unordered_map<std::string,std::vector<double>>> regrets, std::vector<std::unordered_map<std::string,std::vector<double>>> strategies);
+  std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
   int chooseMove(std::vector<double>& strategy);
-  std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual);
+  std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
   
   std::shared_ptr<PayoutSet<S, T>> payout;
   Random random;
   int numPlayers;
   bool display;
   int outputPeriod;
-  std::vector<std::unordered_map<std::string,std::vector<double>>> regrets;
-  std::vector<std::unordered_map<std::string,std::vector<double>>> strategies;
+  std::vector<std::unordered_map<std::string,std::vector<double>>> aggregate_regrets;
+  std::vector<std::unordered_map<std::string,std::vector<double>>> aggregate_strategies;
   std::mutex stream_mutex;
-  std::mutex strategies_mutex;
-  std::mutex regrets_mutex;
 };
 
 
@@ -49,13 +47,13 @@ CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_p
   payout(payout),
   random(),
   numPlayers(payout->numPlayers()),
-  regrets(),
-  strategies(),
+  aggregate_regrets(),
+  aggregate_strategies(),
   display(display)
 {
   for (int i = 0; i < numPlayers; ++i) {
-    regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
-    strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
+    aggregate_regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+    aggregate_strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
   }
 }
 
@@ -65,7 +63,7 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) 
   int iters = iterations / numThreads;
   outputPeriod = std::min(1000, iters / 1000);
   for (int thread = 0; thread < numThreads; ++thread) {
-    threads.push_back(std::thread([this, iters](){train(iters);}));
+    threads.push_back(std::thread([this, iters](){train(iters, aggregate_regrets, aggregate_strategies);}));
   }
   for (std::thread& thr : threads) {
     thr.join();
@@ -73,7 +71,7 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) 
 }
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
+void CounterFactualRegretMinimizer<S, T>::train(int iterations, std::vector<std::unordered_map<std::string,std::vector<double>>> regrets, std::vector<std::unordered_map<std::string,std::vector<double>>> strategies) {
   std::shared_ptr<PayoutSet<S, T>> payoutCopy = payout->deepCopy();
   for (int i = 0; i < iterations; ++i) {
     if (display && i % outputPeriod == 0) {
@@ -88,12 +86,14 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
       factual.push_back(1);
       counterfactual.push_back(1);
     }
-    train(payoutCopy, factual, counterfactual);
+    train(payoutCopy, factual, counterfactual, regrets, strategies);
   }
+  aggregate_regrets = regrets;
+  aggregate_strategies = strategies;
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies) {
   if (payouts->isTerminalState()) {
     return payouts->payout();
   }
@@ -102,9 +102,8 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
   int player = payouts->playerToAct();
   std::vector<S> actions = payouts->actions();
   std::string id = payouts->uniqueIdentifier(sets[player]);
-  std::vector<double> curStrategy = strategyProfile(player, id, actions);
+  std::vector<double> curStrategy = strategyProfile(player, id, actions, regrets, strategies);
   {
-    strategies_mutex.lock();
     std::vector<double>& cumulativeStrategy = strategies[player][id];
     while (actions.size() > cumulativeStrategy.size()) {
       cumulativeStrategy.push_back(0);
@@ -112,7 +111,6 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
     for (int i = 0; i < cumulativeStrategy.size(); ++i) {
       cumulativeStrategy[i] += curStrategy[i] * factual[player];
     }
-    strategies_mutex.unlock();
   }
   //Calculate utilities
   std::vector<double> values;
@@ -133,7 +131,7 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
     }
     std::vector<double> newFactual = factual;
     newFactual[player] *= curStrategy[i];
-    std::vector<double> results = train(copy, newFactual, newCounterfactual); //forward passing of history and backward passing of rewards
+    std::vector<double> results = train(copy, newFactual, newCounterfactual, regrets, strategies); //forward passing of history and backward passing of rewards
     double moveValue = results[player];
     values.push_back(moveValue);
     for (int index = 0; index < results.size(); ++index) { 
@@ -142,7 +140,6 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
   }
   //Compute regrets
   {
-    regrets_mutex.lock();
     std::vector<double>& cumulativeRegrets = regrets[player][id];
     while (actions.size() > cumulativeRegrets.size()) {
       cumulativeRegrets.push_back(0);
@@ -153,17 +150,14 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
 	cumulativeRegrets[i] = 0;
       }
     }
-    regrets_mutex.unlock();
   }
   return outcome;
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S> actions) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies) {
   std::vector<double> strategy;
-  regrets_mutex.lock();
-  std::vector<double> cumulativeRegrets = regrets[player][id];
-  regrets_mutex.unlock();
+  std::vector<double>& cumulativeRegrets = regrets[player][id];
   //If first time encountering set
   while (actions.size() > cumulativeRegrets.size()) {
     cumulativeRegrets.push_back(0);
@@ -204,7 +198,7 @@ void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
   file << "STRATEGIES" << "\n";
   for (int i = 0; i < numPlayers; ++i) {
     file << "PLAYER: " << i << std::endl;
-    for (auto it = strategies[i].begin(); it != strategies[i].end(); ++it) {
+    for (auto it = aggregate_strategies[i].begin(); it != aggregate_strategies[i].end(); ++it) {
       file << it->first;
       for (double value : it->second) {
 	file << " " << value;
@@ -216,7 +210,7 @@ void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
   file << "REGRETS" << "\n";
   for (int i = 0; i < numPlayers; ++i) {
     file << "PLAYER: " << i << std::endl;
-    for (auto it = regrets[i].begin(); it != regrets[i].end(); ++it) {
+    for (auto it = aggregate_regrets[i].begin(); it != aggregate_regrets[i].end(); ++it) {
       file << it->first;
       for (double value : it->second) {
 	file << " " << value;
@@ -235,9 +229,9 @@ void CounterFactualRegretMinimizer<S, T>::load(std::string filename) {
   if (buffer != "STRATEGIES") {
     return;
   }
-  strategies.clear();
+  aggregate_strategies.clear();
   for (int player = 0; player < numPlayers; ++player) {
-    strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
+    aggregate_strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
     std::getline(file, buffer); //discard line
     std::getline(file, buffer);
     while (buffer != "END") {
@@ -250,7 +244,7 @@ void CounterFactualRegretMinimizer<S, T>::load(std::string filename) {
 	line >> entry;
 	value.push_back(entry);
       }
-      strategies[player][key] = value;
+      aggregate_strategies[player][key] = value;
       std::getline(file, buffer);
     }
   }
@@ -258,9 +252,9 @@ void CounterFactualRegretMinimizer<S, T>::load(std::string filename) {
   if (buffer != "REGRETS") {
     return;
   }
-  regrets.clear();
+  aggregate_regrets.clear();
   for (int player = 0; player < numPlayers; ++player) {
-    regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+    aggregate_regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
     std::getline(file, buffer);
     std::getline(file, buffer); //discard line
     while (buffer != "END") {
@@ -273,7 +267,7 @@ void CounterFactualRegretMinimizer<S, T>::load(std::string filename) {
 	line >> entry;
 	value.push_back(entry);
       }
-      regrets[player][key] = value;
+      aggregate_regrets[player][key] = value;
       std::getline(file, buffer);
     }
   }
