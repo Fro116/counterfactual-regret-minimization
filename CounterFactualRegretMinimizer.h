@@ -39,6 +39,7 @@ class CounterFactualRegretMinimizer {
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregate_regrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregate_strategies;
   std::mutex stream_mutex;
+  std::mutex training_data_mutex;
 };
 
 
@@ -63,7 +64,9 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) 
   int iters = iterations / numThreads;
   outputPeriod = std::min(1000, iters / 1000);
   for (int thread = 0; thread < numThreads; ++thread) {
+    training_data_mutex.lock();
     threads.push_back(std::thread([this, iters](){train(iters, aggregate_regrets, aggregate_strategies);}));
+    training_data_mutex.unlock();
   }
   for (std::thread& thr : threads) {
     thr.join();
@@ -88,8 +91,31 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, std::vector<std:
     }
     train(payoutCopy, factual, counterfactual, regrets, strategies);
   }
-  aggregate_regrets = regrets;
-  aggregate_strategies = strategies;
+  //Merge results
+  training_data_mutex.lock();
+  for (int player = 0; player < numPlayers; ++player) {
+    for (auto it = regrets[player].begin(); it != regrets[player].end(); ++it) {
+      std::string key = it->first;
+      std::vector<double> value = it->second;
+      while (aggregate_regrets[player][key].size() < value.size()) {
+	aggregate_regrets[player][key].push_back(0);
+      }
+      for (int index = 0; index < value.size(); ++index) {
+	aggregate_regrets[player][key][index] += value[index];
+      }
+    }
+    for (auto it = strategies[player].begin(); it != strategies[player].end(); ++it) {
+      std::string key = it->first;
+      std::vector<double> value = it->second;
+      while (aggregate_strategies[player][key].size() < value.size()) {
+	aggregate_strategies[player][key].push_back(0);
+      }
+      for (int index = 0; index < value.size(); ++index) {
+	aggregate_strategies[player][key][index] += value[index];
+      }
+    }
+  }
+  training_data_mutex.unlock();
 }
 
 template <class S, class T>
