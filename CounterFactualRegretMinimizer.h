@@ -105,15 +105,15 @@ bool CounterFactualRegretMinimizer<S, T>::hasConverged(std::vector<std::unordere
       }
       for (int index = 0; index < oldStrategies[player][key].size(); ++index) {
 	error += std::abs(oldStrategies[player][key][index]/oldTotal - newStrategies[player][key][index]/newTotal);
-	//	if (error > precision) {
-	//  return false;
-	//}
+	if (error > precision) {
+	  return false;
+	}
       }
     }
   }
-  //return true;
-  std::cout << "ERROR: " << error << std::endl;
-  return error < precision;
+  return true;
+  //std::cout << "ERROR: " << error << std::endl;
+  //return error < precision;
 }
 
 template <class S, class T>
