@@ -30,9 +30,10 @@ class CounterFactualRegretMinimizer {
   void load(std::string filename);
  private:
   void train(int iterations);
-  std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
+  std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets);
   int chooseMove(std::vector<double>& strategy);
   std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
+  void merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& newRegrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies);
   bool hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldStrategies, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies, double precision);
   
   std::shared_ptr<PayoutSet<S, T>> payout;
@@ -150,10 +151,16 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
     train(payoutCopy, factual, counterfactual, regretsCopy, strategiesCopy);
   }
   training_data_mutex.lock();
+  merge(regretsCopy, strategiesCopy);
+  training_data_mutex.unlock();
+}
+
+template <class S, class T>
+void CounterFactualRegretMinimizer<S, T>::merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& newRegrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies) {
   for (int player = 0; player < numPlayers; ++player) {
-    for (auto it : regretsCopy[player]) {
+    for (auto it : newRegrets[player]) {
       std::string key = it.first;
-      std::vector<double> value = it.second;
+      std::vector<double>& value = it.second;
       while (aggregateRegrets[player][key].size() < value.size()) {
 	aggregateRegrets[player][key].push_back(0);
       }
@@ -161,9 +168,9 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
 	aggregateRegrets[player][key][index] += value[index];
       }
     }
-    for (auto it : strategiesCopy[player]) {
+    for (auto it : newStrategies[player]) {
       std::string key = it.first;
-      std::vector<double> value = it.second;
+      std::vector<double>& value = it.second;
       while (aggregateStrategies[player][key].size() < value.size()) {
 	aggregateStrategies[player][key].push_back(0);
       }
@@ -172,7 +179,6 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
       }
     }
   }
-  training_data_mutex.unlock();
 }
 
 template <class S, class T>
@@ -185,7 +191,7 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
   int player = payouts->playerToAct();
   std::vector<S> actions = payouts->actions();
   std::string id = payouts->uniqueIdentifier(sets[player]);
-  std::vector<double> curStrategy = strategyProfile(player, id, actions, regrets, strategies);
+  std::vector<double> curStrategy = strategyProfile(player, id, actions, regrets);
   {
     std::vector<double>& cumulativeStrategy = strategies[player][id];
     while (actions.size() > cumulativeStrategy.size()) {
@@ -235,19 +241,12 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets) {
   std::vector<double> strategy;
   std::vector<double>& cumulativeRegrets = regrets[player][id];
   //If first time encountering set
   while (actions.size() > cumulativeRegrets.size()) {
     cumulativeRegrets.push_back(0);
-  }
-  double totalRegrets = 0;
-  for (double regret : cumulativeRegrets) {
-    if (regret < 0) {
-      continue;
-    }
-    totalRegrets += regret;
   }
   //merge with stored results
   std::vector<double> history;
@@ -255,13 +254,19 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int pla
   if (aggregateRegrets[player].find(id) != aggregateRegrets[player].end()) {
     for (double regret : aggregateRegrets[player][id]) {
       history.push_back(regret);
-      if (regret < 0) {
-	totalRegrets += regret;
-      }
     }
   }
-  while (actions.size() > history.size()) {
-    history.push_back(0);
+  else {
+    while (actions.size() > history.size()) {
+      history.push_back(0);
+    }
+  }
+  double totalRegrets = 0;
+  for (int i = 0; i < actions.size(); ++i) {
+    double regret = cumulativeRegrets[i] + history[i];
+    if (regret > 0) {
+      totalRegrets += regret;
+    }
   }
   if (totalRegrets == 0) {
     for (int i = 0; i < cumulativeRegrets.size(); ++i) {
