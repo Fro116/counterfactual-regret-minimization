@@ -84,8 +84,8 @@ ParallelTestPayoutSet::ParallelTestGameState::ParallelTestGameState() :
   p1Card = 1;
   p2Card = 1;
   while (p1Card == p2Card) {
-    p1Card = rand.integer(1,1000);
-    p2Card = rand.integer(1,1000);
+    p1Card = rand.integer(1,1000000);
+    p2Card = rand.integer(1,1000000);
   }
   potContributions.push_back(1);
   potContributions.push_back(1);
