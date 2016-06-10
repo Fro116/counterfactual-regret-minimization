@@ -33,14 +33,17 @@ class CounterFactualRegretMinimizer {
   std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets);
   int chooseMove(std::vector<double>& strategy);
   std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
-  void merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& newRegrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies);
-  bool hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldStrategies, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies, double precision);
+  void merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldData, std::vector<std::unordered_map<std::string,std::vector<double>>>& newData);
+  bool hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& aggregateData, std::vector<std::unordered_map<std::string,std::vector<double>>>& incrementalData, double precision);
   
   std::shared_ptr<PayoutSet<S, T>> payout;
   Random random;
   int numPlayers;
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateRegrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateStrategies;
+  //For comparing new results to see if the algorithm converged
+  std::vector<std::unordered_map<std::string,std::vector<double>>> incrementalRegrets;
+  std::vector<std::unordered_map<std::string,std::vector<double>>> incrementalStrategies;
   std::mutex training_data_mutex;
 };
 
@@ -51,11 +54,15 @@ CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_p
   random(),
   numPlayers(payout->numPlayers()),
   aggregateRegrets(),
-  aggregateStrategies()
+  aggregateStrategies(),
+  incrementalRegrets(),
+  incrementalStrategies()
 {
   for (int i = 0; i < numPlayers; ++i) {
     aggregateRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
     aggregateStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
+    incrementalRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+    incrementalStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
   }
 }
 
@@ -67,9 +74,6 @@ void CounterFactualRegretMinimizer<S, T>::train(std::string filename, int numThr
   int totalIterations = 0;
   std::cout << "BEGINNING TRAINING" << std::endl;
   while (!converged) {
-    //TODO PREVENT COPYING OF DATA
-    std::vector<std::unordered_map<std::string,std::vector<double>>> oldStrategies = aggregateStrategies;
-    std::vector<std::unordered_map<std::string,std::vector<double>>> oldRegrets = aggregateRegrets;
     train(threadPeriod, numThreads);
     iteration += threadPeriod;
     totalIterations += threadPeriod;
@@ -77,44 +81,49 @@ void CounterFactualRegretMinimizer<S, T>::train(std::string filename, int numThr
       iteration %= savePeriod;
       save(filename);
       std::cout << "COMPLETED ITERATION: " << totalIterations << std::endl;
-      converged = hasConverged(oldStrategies, aggregateStrategies, precision) && hasConverged(oldRegrets, aggregateRegrets, precision);
+      converged = hasConverged(aggregateStrategies, incrementalStrategies, precision) && hasConverged(aggregateRegrets, incrementalRegrets, precision);
+      incrementalRegrets.clear();
+      incrementalStrategies.clear();
+      for (int i = 0; i < numPlayers; ++i) {
+	incrementalRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+	incrementalStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
+      }
     }
   }
 }
 
 template <class S, class T>
-bool CounterFactualRegretMinimizer<S, T>::hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldStrategies, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies, double precision) {
+bool CounterFactualRegretMinimizer<S, T>::hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& aggregateData, std::vector<std::unordered_map<std::string,std::vector<double>>>& incrementalData, double precision) {
   double error = 0;
   for (int player = 0; player < numPlayers; ++player) {
-    std::set<std::string> oldKeys;
-    std::set<std::string> newKeys;
-    for (auto kv : oldStrategies[player]) {
-      oldKeys.insert(kv.first);
+    std::set<std::string> keys;
+    for (auto kv : aggregateData[player]) {
+      keys.insert(kv.first);
     }
-    for (auto kv : newStrategies[player]) {
-      newKeys.insert(kv.first);
-    }
-    if (oldKeys != newKeys) {
-      return false;
-    }
-    for (auto key : oldKeys) {
-      double oldTotal = 0;
-      double newTotal = 0;
-      for (int index = 0; index < oldStrategies[player][key].size(); ++index) {
-	oldTotal += std::abs(oldStrategies[player][key][index]);
-	newTotal += std::abs(newStrategies[player][key][index]);
-      }
-      for (int index = 0; index < oldStrategies[player][key].size(); ++index) {
-	error += std::abs(oldStrategies[player][key][index]/oldTotal - newStrategies[player][key][index]/newTotal);
-	if (error > precision) {
+    /* std::cout << oldKeys.size() << "\t" << newKeys.size() << std::endl; */
+    for (auto key : keys) {
+      if (incrementalData[player].find(key) != incrementalData[player].end()) {
+	double aggregateTotal = 0;
+	double previousTotal = 0;
+	for (int index = 0; index < aggregateData[player][key].size(); ++index) {
+	  aggregateTotal += std::abs(aggregateData[player][key][index]);
+	  previousTotal += std::abs(aggregateData[player][key][index] - incrementalData[player][key][index]);
+	}
+	if (previousTotal == 0) {
 	  return false;
+	}
+	for (int index = 0; index < aggregateData[player][key].size(); ++index) {
+	  error += std::abs(aggregateData[player][key][index]/aggregateTotal - (aggregateData[player][key][index] - incrementalData[player][key][index])/previousTotal);
+	  /* if (error > precision) { */
+	  /*   return false; */
+	  /* } */
 	}
       }
     }
   }
-  return true;
-  //std::cout << "ERROR: " << error << std::endl;
-  //return error < precision;
+  /* return true; */
+  std::cout << "ERROR: " << error << std::endl;
+  return error < precision;
 }
 
 template <class S, class T>
@@ -122,9 +131,7 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) 
   std::vector<std::thread> threads;
   int iters = iterations / numThreads;
   for (int thread = 0; thread < numThreads; ++thread) {
-    training_data_mutex.lock();
     threads.push_back(std::thread([this, iters](){train(iters);}));
-    training_data_mutex.unlock();
   }
   for (std::thread& thr : threads) {
     thr.join();
@@ -134,11 +141,11 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) 
 template <class S, class T>
 void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
   std::shared_ptr<PayoutSet<S, T>> payoutCopy = payout->deepCopy();
-  std::vector<std::unordered_map<std::string,std::vector<double>>> regretsCopy;
-  std::vector<std::unordered_map<std::string,std::vector<double>>> strategiesCopy;
+  std::vector<std::unordered_map<std::string,std::vector<double>>> regrets;
+  std::vector<std::unordered_map<std::string,std::vector<double>>> strategies;
   for (int i = 0; i < numPlayers; ++i) {
-    regretsCopy.push_back(std::unordered_map<std::string,std::vector<double>>());
-    strategiesCopy.push_back(std::unordered_map<std::string,std::vector<double>>());
+    regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+    strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
   }
   for (int i = 0; i < iterations; ++i) {
     payoutCopy->beginGame();
@@ -148,34 +155,27 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
       factual.push_back(1);
       counterfactual.push_back(1);
     }
-    train(payoutCopy, factual, counterfactual, regretsCopy, strategiesCopy);
+    train(payoutCopy, factual, counterfactual, regrets, strategies);
   }
   training_data_mutex.lock();
-  merge(regretsCopy, strategiesCopy);
+  merge(incrementalRegrets, regrets);
+  merge(incrementalStrategies, strategies);
+  merge(aggregateRegrets, regrets);
+  merge(aggregateStrategies, strategies);
   training_data_mutex.unlock();
 }
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& newRegrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& newStrategies) {
+void CounterFactualRegretMinimizer<S, T>::merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldData, std::vector<std::unordered_map<std::string,std::vector<double>>>& newData) {
   for (int player = 0; player < numPlayers; ++player) {
-    for (auto it : newRegrets[player]) {
+    for (auto it : newData[player]) {
       std::string key = it.first;
       std::vector<double>& value = it.second;
-      while (aggregateRegrets[player][key].size() < value.size()) {
-	aggregateRegrets[player][key].push_back(0);
+      while (oldData[player][key].size() < value.size()) {
+	oldData[player][key].push_back(0);
       }
       for (int index = 0; index < value.size(); ++index) {
-	aggregateRegrets[player][key][index] += value[index];
-      }
-    }
-    for (auto it : newStrategies[player]) {
-      std::string key = it.first;
-      std::vector<double>& value = it.second;
-      while (aggregateStrategies[player][key].size() < value.size()) {
-	aggregateStrategies[player][key].push_back(0);
-      }
-      for (int index = 0; index < value.size(); ++index) {
-	aggregateStrategies[player][key][index] += value[index];
+	oldData[player][key][index] += value[index];
       }
     }
   }

@@ -2,9 +2,11 @@
 CMake*
 Makefile
 *.o
+compile_commands.json
 
 #Executables
 solver
 
 #Temporary files
 tmp
+*.txt
