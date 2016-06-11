@@ -24,12 +24,13 @@ template <class S, class T>
 class CounterFactualRegretMinimizer {
  public:
   CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout);
-  void train(std::string filename, int numThreads, double precision = 0.01, int savePeriod = 100000, int convergencePeriod = 10000, int threadPeriod = 1000);
-  void train(int iterations, int numThreads);
+  void solve(std::string outputFile, int numThreads, double precision, long itersPerSave, long itersPerConvergenceTest, int itersPerThread = 1000);
+  void train(long iterations, int numThreads, long itersPerThread = 1000);
+  //itersPerThread is the number of iterations each thread should explore before merging their results
   void save(std::string filename);
   void load(std::string filename);
  private:
-  void train(int iterations);
+  void train(long iterations);
   std::vector<double> strategyProfile(int player, std::string id, std::vector<S>& actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets);
   int chooseMove(std::vector<double>& strategy);
   std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
@@ -42,7 +43,6 @@ class CounterFactualRegretMinimizer {
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateRegrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateStrategies;
   //For comparing new results to see if the algorithm converged
-  std::vector<std::unordered_map<std::string,std::vector<double>>> incrementalRegrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> incrementalStrategies;
   std::mutex training_data_mutex;
 };
@@ -55,52 +55,42 @@ CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_p
   numPlayers(payout->numPlayers()),
   aggregateRegrets(),
   aggregateStrategies(),
-  incrementalRegrets(),
   incrementalStrategies()
 {
   for (int i = 0; i < numPlayers; ++i) {
     aggregateRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
     aggregateStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
-    incrementalRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
     incrementalStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
   }
 }
 
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(std::string filename, int numThreads, double precision, int savePeriod, int convergencePeriod, int threadPeriod) {
+void CounterFactualRegretMinimizer<S, T>::solve(std::string outputFile, int numThreads, double precision, long itersPerSave, long itersPerConvegenceTest, int itersPerThread) {
   bool converged = false;
-  int saveIteration = 0;
-  int convergenceIteration = 0;
+  long saveCounter = 0;
   long totalIterations = 0;
   std::cout << "BEGINNING TRAINING" << std::endl;
   while (!converged) {
-    train(threadPeriod, numThreads);
-    saveIteration += threadPeriod;
-    convergenceIteration += threadPeriod;
-    totalIterations += threadPeriod;
-    if (convergenceIteration >= convergencePeriod) {
-      convergenceIteration %= convergencePeriod;
-      std::cout << "COMPLETED ITERATION: " << totalIterations << std::endl;
-      converged = hasConverged(aggregateStrategies, incrementalStrategies, precision) && hasConverged(aggregateRegrets, incrementalRegrets, precision);
-      if (converged) {
-	std::cout << "SAVING..." << std::endl;
-	save(filename);
-	break;
-      }
-      for (int player = 0; player < numPlayers; ++player) {
-	for (auto& kv : incrementalRegrets[player]) {
-	  kv.second.clear();
-	}
-	for (auto& kv : incrementalStrategies[player]) {
-	  kv.second.clear();
-	}
+    train(itersPerConvegenceTest, numThreads, itersPerThread);
+    saveCounter += itersPerConvegenceTest;
+    totalIterations += itersPerConvegenceTest;
+    std::cout << "COMPLETED ITERATION: " << totalIterations << std::endl;
+    converged = hasConverged(aggregateStrategies, incrementalStrategies, precision);
+    if (converged) {
+      std::cout << "SAVING..." << std::endl;
+      save(outputFile);
+      break;
+    }
+    for (int player = 0; player < numPlayers; ++player) {
+      for (auto& kv : incrementalStrategies[player]) {
+	kv.second.clear();
       }
     }
-    if (saveIteration >= savePeriod) {
-      saveIteration %= savePeriod;
+    if (saveCounter >= itersPerSave) {
+      saveCounter %= itersPerSave;
       std::cout << "SAVING..." << std::endl;
-      save(filename);
+      save(outputFile);
     }
   }
 }
@@ -130,26 +120,27 @@ bool CounterFactualRegretMinimizer<S, T>::hasConverged(std::vector<std::unordere
       }
     }
   }
-  /* return true; */
+  return true;
   /* std::cout << "ERROR: " << error << std::endl; */
   /* return error < precision; */
-  return true;
 }
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(int iterations, int numThreads) {
-  std::vector<std::thread> threads;
-  int iters = iterations / numThreads;
-  for (int thread = 0; thread < numThreads; ++thread) {
-    threads.push_back(std::thread([this, iters](){train(iters);}));
-  }
-  for (std::thread& thr : threads) {
-    thr.join();
+void CounterFactualRegretMinimizer<S, T>::train(long iterations, int numThreads, long itersPerThread) {
+  while (iterations > 0) {
+    std::vector<std::thread> threads;
+    for (int thread = 0; thread < numThreads; ++thread) {
+      threads.push_back(std::thread([this, itersPerThread](){train(itersPerThread);}));
+    }
+    for (std::thread& thr : threads) {
+      thr.join();
+    }
+    iterations -= itersPerThread * numThreads;
   }
 }
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
+void CounterFactualRegretMinimizer<S, T>::train(long iterations) {
   std::shared_ptr<PayoutSet<S, T>> payoutCopy = payout->deepCopy();
   std::vector<std::unordered_map<std::string,std::vector<double>>> regrets;
   std::vector<std::unordered_map<std::string,std::vector<double>>> strategies;
@@ -168,7 +159,6 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
     train(payoutCopy, factual, counterfactual, regrets, strategies);
   }
   training_data_mutex.lock();
-  merge(incrementalRegrets, regrets);
   merge(incrementalStrategies, strategies);
   merge(aggregateRegrets, regrets);
   merge(aggregateStrategies, strategies);
