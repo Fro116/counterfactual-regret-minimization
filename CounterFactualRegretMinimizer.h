@@ -24,13 +24,13 @@ template <class S, class T>
 class CounterFactualRegretMinimizer {
  public:
   CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout);
-  void train(std::string filename, int numThreads, double precision = 0.01, int savePeriod = 10000, int threadPeriod = 1000);
+  void train(std::string filename, int numThreads, double precision = 0.01, int savePeriod = 100000, int convergencePeriod = 10000, int threadPeriod = 1000);
   void train(int iterations, int numThreads);
   void save(std::string filename);
   void load(std::string filename);
  private:
   void train(int iterations);
-  std::vector<double> strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets);
+  std::vector<double> strategyProfile(int player, std::string id, std::vector<S>& actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets);
   int chooseMove(std::vector<double>& strategy);
   std::vector<double> train(std::shared_ptr<PayoutSet<S, T>> payouts, std::vector<double>& factual, std::vector<double>& counterfactual, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets, std::vector<std::unordered_map<std::string,std::vector<double>>>& strategies);
   void merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldData, std::vector<std::unordered_map<std::string,std::vector<double>>>& newData);
@@ -68,26 +68,39 @@ CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_p
 
 
 template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(std::string filename, int numThreads, double precision, int savePeriod, int threadPeriod) {
+void CounterFactualRegretMinimizer<S, T>::train(std::string filename, int numThreads, double precision, int savePeriod, int convergencePeriod, int threadPeriod) {
   bool converged = false;
-  int iteration = 0;
-  int totalIterations = 0;
+  int saveIteration = 0;
+  int convergenceIteration = 0;
+  long totalIterations = 0;
   std::cout << "BEGINNING TRAINING" << std::endl;
   while (!converged) {
     train(threadPeriod, numThreads);
-    iteration += threadPeriod;
+    saveIteration += threadPeriod;
+    convergenceIteration += threadPeriod;
     totalIterations += threadPeriod;
-    if (iteration >= savePeriod) {
-      iteration %= savePeriod;
-      save(filename);
+    if (convergenceIteration >= convergencePeriod) {
+      convergenceIteration %= convergencePeriod;
       std::cout << "COMPLETED ITERATION: " << totalIterations << std::endl;
       converged = hasConverged(aggregateStrategies, incrementalStrategies, precision) && hasConverged(aggregateRegrets, incrementalRegrets, precision);
-      incrementalRegrets.clear();
-      incrementalStrategies.clear();
-      for (int i = 0; i < numPlayers; ++i) {
-	incrementalRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
-	incrementalStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
+      if (converged) {
+	std::cout << "SAVING..." << std::endl;
+	save(filename);
+	break;
       }
+      for (int player = 0; player < numPlayers; ++player) {
+	for (auto& kv : incrementalRegrets[player]) {
+	  kv.second.clear();
+	}
+	for (auto& kv : incrementalStrategies[player]) {
+	  kv.second.clear();
+	}
+      }
+    }
+    if (saveIteration >= savePeriod) {
+      saveIteration %= savePeriod;
+      std::cout << "SAVING..." << std::endl;
+      save(filename);
     }
   }
 }
@@ -96,34 +109,31 @@ template <class S, class T>
 bool CounterFactualRegretMinimizer<S, T>::hasConverged(std::vector<std::unordered_map<std::string,std::vector<double>>>& aggregateData, std::vector<std::unordered_map<std::string,std::vector<double>>>& incrementalData, double precision) {
   double error = 0;
   for (int player = 0; player < numPlayers; ++player) {
-    std::set<std::string> keys;
-    for (auto kv : aggregateData[player]) {
-      keys.insert(kv.first);
-    }
-    /* std::cout << oldKeys.size() << "\t" << newKeys.size() << std::endl; */
-    for (auto key : keys) {
-      if (incrementalData[player].find(key) != incrementalData[player].end()) {
+    for (auto& kv : aggregateData[player]) {
+      if (incrementalData[player].find(kv.first) != incrementalData[player].end()) {
+	std::vector<double>& incData = incrementalData[player][kv.first];
 	double aggregateTotal = 0;
 	double previousTotal = 0;
-	for (int index = 0; index < aggregateData[player][key].size(); ++index) {
-	  aggregateTotal += std::abs(aggregateData[player][key][index]);
-	  previousTotal += std::abs(aggregateData[player][key][index] - incrementalData[player][key][index]);
+	for (int index = 0; index < kv.second.size(); ++index) {
+	  aggregateTotal += std::abs(kv.second[index]);
+	  previousTotal += std::abs(kv.second[index] - incData[index]);
 	}
 	if (previousTotal == 0) {
 	  return false;
 	}
-	for (int index = 0; index < aggregateData[player][key].size(); ++index) {
-	  error += std::abs(aggregateData[player][key][index]/aggregateTotal - (aggregateData[player][key][index] - incrementalData[player][key][index])/previousTotal);
-	  /* if (error > precision) { */
-	  /*   return false; */
-	  /* } */
+	for (int index = 0; index < kv.second.size(); ++index) {
+	  error += std::abs(kv.second[index]/aggregateTotal - (kv.second[index] - incData[index])/previousTotal);
+	  if (error > precision) {
+	    return false;
+	  }
 	}
       }
     }
   }
   /* return true; */
-  std::cout << "ERROR: " << error << std::endl;
-  return error < precision;
+  /* std::cout << "ERROR: " << error << std::endl; */
+  /* return error < precision; */
+  return true;
 }
 
 template <class S, class T>
@@ -168,7 +178,7 @@ void CounterFactualRegretMinimizer<S, T>::train(int iterations) {
 template <class S, class T>
 void CounterFactualRegretMinimizer<S, T>::merge(std::vector<std::unordered_map<std::string,std::vector<double>>>& oldData, std::vector<std::unordered_map<std::string,std::vector<double>>>& newData) {
   for (int player = 0; player < numPlayers; ++player) {
-    for (auto it : newData[player]) {
+    for (auto& it : newData[player]) {
       std::string key = it.first;
       std::vector<double>& value = it.second;
       while (oldData[player][key].size() < value.size()) {
@@ -241,8 +251,9 @@ std::vector<double> CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<P
 }
 
 template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S> actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets) {
+std::vector<double> CounterFactualRegretMinimizer<S, T>::strategyProfile(int player, std::string id, std::vector<S>& actions, std::vector<std::unordered_map<std::string,std::vector<double>>>& regrets) {
   std::vector<double> strategy;
+  strategy.reserve(actions.size());
   std::vector<double>& cumulativeRegrets = regrets[player][id];
   //If first time encountering set
   while (actions.size() > cumulativeRegrets.size()) {
@@ -304,7 +315,7 @@ void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
   file << "STRATEGIES" << "\n";
   for (int i = 0; i < numPlayers; ++i) {
     file << "PLAYER: " << i << std::endl;
-    for (auto it : aggregateStrategies[i]) {
+    for (auto& it : aggregateStrategies[i]) {
       file << it.first;
       for (double value : it.second) {
 	file << " " << value;
@@ -316,7 +327,7 @@ void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
   file << "REGRETS" << "\n";
   for (int i = 0; i < numPlayers; ++i) {
     file << "PLAYER: " << i << std::endl;
-    for (auto it : aggregateRegrets[i]) {
+    for (auto& it : aggregateRegrets[i]) {
       file << it.first;
       for (double value : it.second) {
 	file << " " << value;
