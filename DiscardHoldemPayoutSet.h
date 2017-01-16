@@ -22,23 +22,24 @@
 
 #include "PayoutSet.h"
 #include "DiscardHoldemGameState.h"
+#include "DiscardHoldemInformationSet.h"
 
-class DiscardHoldemPayoutSet : public PayoutSet<std::string, std::string> {
+class DiscardHoldemPayoutSet : public PayoutSet<std::string, DiscardHoldemInformationSet> {
  public:
   DiscardHoldemPayoutSet();
   std::vector<double> payout();
   void beginGame();
   void makeMove(std::string action);
-  std::vector<std::string> infoSets();
-  std::shared_ptr<PayoutSet<std::string, std::string>> deepCopy();
+  std::vector<DiscardHoldemInformationSet> infoSets();
+  std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> deepCopy();
   bool isTerminalState();
   int numPlayers();
   int playerToAct();
   std::vector<std::string> actions();
-  std::string uniqueIdentifier(std::string set);
+  std::string uniqueIdentifier(DiscardHoldemInformationSet set);
  private:
   DiscardHoldemGameState gameState;
-  std::vector<std::string> sets;
+  std::vector<DiscardHoldemInformationSet> sets;
 };
 
 #endif

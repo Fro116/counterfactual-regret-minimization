@@ -24,10 +24,12 @@ class Card {
  public:
   Card();  
   Card(int rank, int suit);
-  std::string ToString();
+  std::string toString();
+  int rank();
+  int suit();
  private:
-  int rank;
-  int suit;
+  int r;
+  int s;
   std::string str;
 };
 

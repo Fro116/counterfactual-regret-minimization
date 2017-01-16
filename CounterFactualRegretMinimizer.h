@@ -148,7 +148,7 @@ void CounterFactualRegretMinimizer<S, T>::train(long iterations) {
     regrets.push_back(std::unordered_map<std::string,std::vector<double>>());
     strategies.push_back(std::unordered_map<std::string,std::vector<double>>());
   }
-  for (int i = 0; i < iterations; ++i) {
+  for (long i = 0; i < iterations; ++i) {
     payoutCopy->beginGame();
     std::vector<double> factual;
     std::vector<double> counterfactual;
