@@ -1,5 +1,4 @@
 #include "KuhnPokerPayoutSet.h"
-#include "Random.h"
 
 KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
   sets()
@@ -84,8 +83,8 @@ KuhnPokerPayoutSet::KuhnPokerGameState::KuhnPokerGameState() :
   int p1 = 1;
   int p2 = 1;
   while (p1 == p2) {
-    p1 = rand.integer(1,3);
-    p2 = rand.integer(1,3);
+    p1 = std::abs(std::rand() % 3) + 1; //rand.integer(1,3);
+    p2 = std::abs(std::rand() % 3) + 1; //rand.integer(1,3);
   }
   if (p1 == 1)
     p1Card = "A";

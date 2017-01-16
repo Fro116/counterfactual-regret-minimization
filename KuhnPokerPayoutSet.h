@@ -10,7 +10,6 @@
 #include <memory>
 #include <cassert>
 #include <limits>
-#include "Random.h"
 
 #include "PayoutSet.h"
 
@@ -38,7 +37,6 @@ class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet
     std::vector<std::string> actions();
     void makeMove(std::string action);
   private:
-    static Random rand;
     std::string p1Card;
     std::string p2Card;
     int pot;
