@@ -6,36 +6,32 @@ DiscardHoldemPayoutSet::DiscardHoldemPayoutSet() :
 
 }
 
-std::shared_ptr<PayoutSet<std::string, std::string>> DiscardHoldemPayoutSet::deepCopy() {
+std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> DiscardHoldemPayoutSet::deepCopy() {
   std::shared_ptr<DiscardHoldemPayoutSet> copy(new DiscardHoldemPayoutSet);
   copy->gameState = gameState;
   copy->sets = sets;
   return copy;
 }
 
-std::string DiscardHoldemPayoutSet::uniqueIdentifier(std::string set) {
-  return set;
+std::string DiscardHoldemPayoutSet::uniqueIdentifier(DiscardHoldemInformationSet set) {
+  return set.id();
 }
 
 std::vector<double> DiscardHoldemPayoutSet::payout() {
   std::vector<double> results;
-  if (gameState.winningPlayer == 0) {
-    results.push_back(gameState.pot + gameState.p1Chips-gameState.startingStack);
-    results.push_back(gameState.p2Chips-gameState.startingStack);    
-  }
-  else if (gameState.winningPlayer == 1) {
-    results.push_back(gameState.p1Chips-gameState.startingStack);
-    results.push_back(gameState.pot + gameState.p2Chips-gameState.startingStack);        
-  }
+  std::pair<double, double> payout = gameState.payout();
+  results.push_back(payout.first);
+  results.push_back(payout.second);  
   return results;
 }
   
 void DiscardHoldemPayoutSet::beginGame() {
   gameState = DiscardHoldemGameState();
+  gameState.beginGame();
   sets.clear();
-  std::string set1 = "P0";
+  DiscardHoldemInformationSet set1(0, gameState.p1Hand);
   sets.push_back(set1);
-  std::string set2("P1");
+  DiscardHoldemInformationSet set2(1, gameState.p2Hand);
   sets.push_back(set2);
 }
 
@@ -57,9 +53,17 @@ std::vector<std::string> DiscardHoldemPayoutSet::actions() {
 
 void DiscardHoldemPayoutSet::makeMove(std::string action) {
   gameState.makeMove(action);
-  //TODO UPDATE INFOSETS
+  for (DiscardHoldemInformationSet& set : sets) {
+    set.makeMove(action);
+    if (set.boardSize() < gameState.board.size()) {
+      set.setBoard(gameState.board);
+    }
+  }
+  sets[0].setHand(gameState.p1Hand);
+  sets[1].setHand(gameState.p2Hand);  
 }
 
-std::vector<std::string> DiscardHoldemPayoutSet::infoSets() {
+std::vector<DiscardHoldemInformationSet> DiscardHoldemPayoutSet::infoSets() {
   return sets;
 }
+

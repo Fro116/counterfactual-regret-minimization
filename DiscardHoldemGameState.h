@@ -26,11 +26,12 @@ class DiscardHoldemGameState {
   friend class DiscardHodlemPayoutSet;
   public:
     DiscardHoldemGameState();
+    void beginGame();
     std::vector<std::string> actions();
     void makeMove(std::string action);
+    std::pair<double, double> payout();    
     //  private:
-    Card GetCard();
-    int Winner();
+    Card getCard();
     std::vector<Card> deck;
     std::pair<Card, Card> p1Hand;
     std::pair<Card, Card> p2Hand;
@@ -40,11 +41,11 @@ class DiscardHoldemGameState {
     int p2Chips;
     int pot;
     int call;
+    bool folded;
     std::vector<std::string> history;
     int playerToAct;
     bool isTerminalState;
     int turn;
-    int winningPlayer;  
 };
 
 #endif
