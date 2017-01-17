@@ -14,7 +14,12 @@ std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> DiscardHold
 }
 
 std::string DiscardHoldemPayoutSet::uniqueIdentifier(DiscardHoldemInformationSet set) {
-  return set.id();
+  std::string id = set.id()+":";
+  for (std::string action : actions()) {
+    id += action + "_";
+  }
+  id.pop_back();				
+  return id;
 }
 
 std::vector<double> DiscardHoldemPayoutSet::payout() {

@@ -26,7 +26,7 @@ void train() {
   // std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> game(new RPSPayoutSet);
   std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> game(new DiscardHoldemPayoutSet);  
   CounterFactualRegretMinimizer<std::string, DiscardHoldemInformationSet> trainer(game);  
-  trainer.solve("results.txt", 1, 0.01, 100000, 1000);
+  trainer.solve("results.txt", 1, 100000, 10000,1000);
   // trainer.train(100000,2,1000);
   // }
   // trainer.save("tmp.txt");

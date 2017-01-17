@@ -67,7 +67,7 @@ std::string DiscardHoldemInformationSet::id() {
   std::string id = "";
   id += board;
   for (std::string action : history) {
-    id += " ";
+    id += "_";
     id += action;
   }
   return id;
