@@ -114,7 +114,7 @@ void DiscardHoldemGameState::makeMove(std::string action) {
   history.push_back(action);
   if (turn == 0) {
     if (action == "RAISE") {
-      int amount = pot;
+      int amount = 56;
       if (playerToAct == 0) {
 	p1Chips -= amount;
       } else {
