@@ -1,5 +1,7 @@
 #include "DiscardHoldemInformationSet.h"
 
+#include "DiscardHoldemBucketer.h"
+
 DiscardHoldemInformationSet::DiscardHoldemInformationSet(int player, std::pair<Card, Card> hand) :
   player(player),
   hand(hand),
@@ -26,9 +28,9 @@ int DiscardHoldemInformationSet::boardSize() {
 
 std::string DiscardHoldemInformationSet::id() {
   std::vector<std::tuple<int, int, int>> cards;    
-  // for (auto card : board) {
-  //   cards.push_back(std::make_tuple(card.rank(),card.suit(), 1));
-  // }
+  for (auto card : board) {
+    cards.push_back(std::make_tuple(card.rank(),card.suit(), 1));
+  }
   cards.push_back(std::make_tuple(hand.first.rank(),hand.first.suit(), 0));
   cards.push_back(std::make_tuple(hand.second.rank(),hand.second.suit(), 0));  
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {
@@ -65,7 +67,14 @@ std::string DiscardHoldemInformationSet::id() {
   }
   
   std::string id = "";
-  id += cardset;
+
+  if (board.size() == 0) {
+    id += cardset;    
+  } else {
+    int bucket = DiscardHoldemBucketer::bucket(cardset);
+    id += std::to_string(bucket);
+  } 
+  
   for (std::string action : history) {
     id += "_";
     id += action;
