@@ -8,6 +8,7 @@ DiscardHoldemGameState::DiscardHoldemGameState() :
   playerToAct(0),
   deck(),
   history(),
+  roundHistory(),
   startingStack(200),
   p1Chips(200),
   p2Chips(200),  
@@ -82,86 +83,125 @@ std::pair<double, double> DiscardHoldemGameState::payout() {
 std::vector<std::string> DiscardHoldemGameState::actions() {
   std::vector<std::string> response;  
   if (turn == 0) {
-    if (history.size() == 0) {
+    if (roundHistory.size() == 0) {
       response.push_back("RAISE");
       response.push_back("CALL");
       response.push_back("FOLD");      
       return response;
     }
-    else if (history.size() == 1) {
-      if (history[0] == "RAISE") {
+    else if (roundHistory.size() == 1) {
+      if (roundHistory[0] == "RAISE") {
 	response.push_back("CALL");
 	response.push_back("FOLD");
 	return response;
-      } else if (history[0] == "CALL") {
+      } else if (roundHistory[0] == "CALL") {
 	response.push_back("RAISE");
 	response.push_back("CHECK");
       }
     }
-    else if (history.size() == 2) {
-      if (history[0] == "CALL") {
-	if (history[1] == "RAISE") {
+    else if (roundHistory.size() == 2) {
+      if (roundHistory[0] == "CALL") {
+	if (roundHistory[1] == "RAISE") {
 	  response.push_back("CALL");
 	  response.push_back("FOLD");	  
 	}
       }
     }
-  }
+  } else if (turn == 1) {
+    response.push_back("CHECK");
+  } else if (turn == 2) {
+    response.push_back("CHECK");
+  } else if (turn == 3) {
+    response.push_back("CHECK");
+  } 
   return response;
 }
 
 void DiscardHoldemGameState::makeMove(std::string action) {
   history.push_back(action);
-  if (turn == 0) {
-    if (action == "RAISE") {
-      int amount = 56;
-      if (playerToAct == 0) {
-	p1Chips -= amount;
-      } else {
-	p2Chips -= amount;
-      }
-      pot += amount;
-      call = amount-call;
-      playerToAct = 1 - playerToAct;
+  roundHistory.push_back(action);  
+  if (action == "RAISE") {
+    int amount = pot;
+    placeChips(playerToAct, amount);
+    playerToAct = 1 - playerToAct;
+  }
+  else if (action == "FOLD") {
+    folded = true;
+    int winningPlayer = 1 - playerToAct;
+    if (winningPlayer == 0) {
+      p1Chips += pot; 
+    } else {
+      p2Chips += pot;
     }
-    else if (action == "FOLD") {
-      folded = true;
-      int winningPlayer = 1 - playerToAct;
-      if (winningPlayer == 0) {
-	p1Chips += pot; 
-      } else {
-	p2Chips += pot;
-      }
-      isTerminalState = true;
-    }        
-    else if (action == "CALL") {
+    isTerminalState = true;
+  }        
+  else if (action == "CALL") {
+    if (turn == 0) {
       int amount = call;
-      if (playerToAct == 0) {
-	p1Chips -= amount;
-      } else {
-	p2Chips -= amount;
-      }
-      pot += amount;
-      call = 0;      
+      placeChips(playerToAct, amount);      
       playerToAct = 1 - playerToAct;      
-      if (history.size() > 1) {
+      if (roundHistory.size() > 1) {
 	board.push_back(getCard());
 	board.push_back(getCard());
 	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+      }
+    } else if (turn == 1) {
 	board.push_back(getCard());
-	board.push_back(getCard());    
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+    } else if (turn == 2) {
+	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+    } else if (turn == 3) {
+	isTerminalState = true;
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+    } 
+  }
+  else if (action == "CHECK") {
+    playerToAct = 1 - playerToAct;
+    if (turn == 0) {
+      board.push_back(getCard());
+      board.push_back(getCard());
+      board.push_back(getCard());
+      turn++;
+      roundHistory.clear();      
+      playerToAct = 1;      
+    } else if (turn == 1) {
+      if (roundHistory.size() > 1) {
+	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;	
+      }
+    } else if (turn == 2) {
+      if (roundHistory.size() > 1) {
+	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;	
+      }      
+    } else if (turn == 3) {
+      if (roundHistory.size() > 1) {      
 	isTerminalState = true;
       }
-    }
-    else if (action == "CHECK") {
-      call = 0;
-      board.push_back(getCard());
-      board.push_back(getCard());
-      board.push_back(getCard());
-      board.push_back(getCard());
-      board.push_back(getCard());    
-      isTerminalState = true;
-    }
+    }     
   }
 }
 
+void DiscardHoldemGameState::placeChips(int player, int amount) {
+  if (player == 0) {
+    p1Chips -= amount;
+  } else {
+    p2Chips -= amount;
+  }
+  pot += amount;
+  call = amount-call;
+}

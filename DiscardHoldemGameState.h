@@ -32,6 +32,7 @@ class DiscardHoldemGameState {
     std::pair<double, double> payout();    
     //  private:
     Card getCard();
+    void placeChips(int player, int amount);    
     std::vector<Card> deck;
     std::pair<Card, Card> p1Hand;
     std::pair<Card, Card> p2Hand;
@@ -43,6 +44,7 @@ class DiscardHoldemGameState {
     int call;
     bool folded;
     std::vector<std::string> history;
+    std::vector<std::string> roundHistory;    
     int playerToAct;
     bool isTerminalState;
     int turn;

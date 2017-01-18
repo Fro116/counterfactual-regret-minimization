@@ -26,9 +26,9 @@ int DiscardHoldemInformationSet::boardSize() {
 
 std::string DiscardHoldemInformationSet::id() {
   std::vector<std::tuple<int, int, int>> cards;    
-  for (auto card : board) {
-    cards.push_back(std::make_tuple(card.rank(),card.suit(), 1));
-  }
+  // for (auto card : board) {
+  //   cards.push_back(std::make_tuple(card.rank(),card.suit(), 1));
+  // }
   cards.push_back(std::make_tuple(hand.first.rank(),hand.first.suit(), 0));
   cards.push_back(std::make_tuple(hand.second.rank(),hand.second.suit(), 0));  
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {
@@ -58,14 +58,14 @@ std::string DiscardHoldemInformationSet::id() {
       return std::get<2>(left) < std::get<2>(right);
     });
       
-  std::string board = "";
+  std::string cardset = "";
   for (auto card : cards) {
-    board += ranks[std::get<0>(card)];
-    board += suits[std::get<1>(card)];	    
+    cardset += ranks[std::get<0>(card)];
+    cardset += suits[std::get<1>(card)];	    
   }
   
   std::string id = "";
-  id += board;
+  id += cardset;
   for (std::string action : history) {
     id += "_";
     id += action;
