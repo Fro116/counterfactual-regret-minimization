@@ -23,9 +23,12 @@
 class DiscardHoldemBucketer {
  public:
   static void init(std::string file);
+  static void initCenters(std::string file);  
   static int bucket(std::string key);
+  static double distance(std::vector<double> a, std::vector<double> b);
  private:
   static std::unordered_map<std::string, int> bucketmap;
+  static std::vector<std::vector<double>> centers;  
 };
 
 #endif

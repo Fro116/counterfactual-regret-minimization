@@ -81,19 +81,23 @@ std::pair<double, double> DiscardHoldemGameState::payout() {
 }
 
 std::vector<std::string> DiscardHoldemGameState::actions() {
-  std::vector<std::string> response;  
+  std::vector<std::string> response;
+  int chips;
+  if (playerToAct == 0) {
+    chips = p1Chips;
+  } else {
+    chips = p2Chips;
+  }
   if (turn == 0) {
     if (roundHistory.size() == 0) {
       response.push_back("RAISE");
       response.push_back("CALL");
       response.push_back("FOLD");      
-      return response;
     }
     else if (roundHistory.size() == 1) {
       if (roundHistory[0] == "RAISE") {
 	response.push_back("CALL");
 	response.push_back("FOLD");
-	return response;
       } else if (roundHistory[0] == "CALL") {
 	response.push_back("RAISE");
 	response.push_back("CHECK");
@@ -108,18 +112,83 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
       }
     }
   } else if (turn == 1) {
-    response.push_back("CHECK");
+    if (roundHistory.size() == 0) {
+      response.push_back("BET");
+      response.push_back("CHECK");
+    }
+    else if (roundHistory.size() == 1) {
+      if (roundHistory[0] == "BET") {
+	response.push_back("CALL");
+	response.push_back("FOLD");
+      } else if (roundHistory[0] == "CHECK") {
+	response.push_back("BET");
+	response.push_back("CHECK");
+      }
+    }
+    else if (roundHistory.size() == 2) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");	  
+	}
+      }
+    }    
   } else if (turn == 2) {
-    response.push_back("CHECK");
+    if (roundHistory.size() == 0) {
+      response.push_back("BET");
+      response.push_back("CHECK");
+    }
+    else if (roundHistory.size() == 1) {
+      if (roundHistory[0] == "BET") {
+	response.push_back("CALL");
+	response.push_back("FOLD");
+      } else if (roundHistory[0] == "CHECK") {
+	response.push_back("BET");
+	response.push_back("CHECK");
+      }
+    }
+    else if (roundHistory.size() == 2) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");	  
+	}
+      }
+    }        
   } else if (turn == 3) {
-    response.push_back("CHECK");
+    if (roundHistory.size() == 0) {
+      response.push_back("BET");
+      response.push_back("CHECK");
+    }
+    else if (roundHistory.size() == 1) {
+      if (roundHistory[0] == "BET") {
+	response.push_back("CALL");
+	response.push_back("FOLD");
+      } else if (roundHistory[0] == "CHECK") {
+	response.push_back("BET");
+	response.push_back("CHECK");
+      }
+    }
+    else if (roundHistory.size() == 2) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");	  
+	}
+      }
+    }        
   } 
   return response;
 }
 
 void DiscardHoldemGameState::makeMove(std::string action) {
   history.push_back(action);
-  roundHistory.push_back(action);  
+  roundHistory.push_back(action);
+  if (action == "BET") {
+    int amount = pot;
+    placeChips(playerToAct, amount);
+    playerToAct = 1 - playerToAct;
+  }  
   if (action == "RAISE") {
     int amount = pot;
     placeChips(playerToAct, amount);
@@ -160,9 +229,6 @@ void DiscardHoldemGameState::makeMove(std::string action) {
 	playerToAct = 1;
     } else if (turn == 3) {
 	isTerminalState = true;
-	turn++;
-	roundHistory.clear();
-	playerToAct = 1;
     } 
   }
   else if (action == "CHECK") {
@@ -198,8 +264,10 @@ void DiscardHoldemGameState::makeMove(std::string action) {
 
 void DiscardHoldemGameState::placeChips(int player, int amount) {
   if (player == 0) {
+    amount = std::min(p1Chips, amount);
     p1Chips -= amount;
   } else {
+    amount = std::min(p2Chips, amount);    
     p2Chips -= amount;
   }
   pot += amount;
