@@ -1,19 +1,18 @@
 #include "Card.h"
 
+std::string Card::ranks[] = {"2","3","4","5","6","7","8","9","T","J","Q","K","A"};
+std::string Card::suits[] = {"c","d","h","s"};
+
 Card::Card() : Card(0,0) {
 
 }
 
 Card::Card(int rank, int suit) : r(rank), s(suit) {
-  char ranks[] = {'2','3','4','5','6','7','8','9','T','J','Q','K','A'};
-  char suits[] = {'c','d','h','s'};
-  str = "";
-  str += ranks[rank];
-  str += suits[suit];
+
 }
 
 std::string Card::toString() {
-  return str;
+  return ranks[r] + suits[s];
 }
 
 int Card::rank() {

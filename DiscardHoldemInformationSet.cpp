@@ -4,6 +4,7 @@
 
 char DiscardHoldemInformationSet::ranks[] = {'2','3','4','5','6','7','8','9','T','J','Q','K','A'};
 char DiscardHoldemInformationSet::suits[] = {'c','d','h','s'};
+int DiscardHoldemInformationSet::suitmap[4];
 
 DiscardHoldemInformationSet::DiscardHoldemInformationSet(int player, std::pair<Card, Card> hand) :
   player(player),
@@ -16,7 +17,7 @@ DiscardHoldemInformationSet::DiscardHoldemInformationSet(int player, std::pair<C
 
 }
 void DiscardHoldemInformationSet::makeMove(std::string action) {
-  history.push_back(action);
+  history += "_"+action;
 }
 
 void DiscardHoldemInformationSet::setHand(std::pair<Card, Card> h) {
@@ -42,17 +43,31 @@ void DiscardHoldemInformationSet::updateName() {
   cards.push_back(std::make_tuple(hand.second.rank(),hand.second.suit(), 0));  
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<0>(left) < std::get<0>(right);});
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<2>(left) < std::get<2>(right);});
-  std::unordered_map<int, int> suitMapping;
+  int* writer = suitmap;
+  for (int i = 0; i< 4; ++i) {
+    *(writer++) = -1;
+  }
   int openSuit = 0;
   for (auto& card : cards) {
-    if (suitMapping.find(std::get<1>(card)) == suitMapping.end()) {
-      suitMapping[std::get<1>(card)] = openSuit;	      
+    if (suitmap[std::get<1>(card)] != -1) {
+      suitmap[std::get<1>(card)] = openSuit;	      
       std::get<1>(card) = openSuit;
       openSuit++;
     } else {
-      std::get<1>(card) = suitMapping[std::get<1>(card)];
+      std::get<1>(card) = suitmap[std::get<1>(card)];
     }
-  }
+  }  
+  // std::unordered_map<int, int> suitMapping;
+  // int openSuit = 0;
+  // for (auto& card : cards) {
+  //   if (suitMapping.find(std::get<1>(card)) == suitMapping.end()) {
+  //     suitMapping[std::get<1>(card)] = openSuit;	      
+  //     std::get<1>(card) = openSuit;
+  //     openSuit++;
+  //   } else {
+  //     std::get<1>(card) = suitMapping[std::get<1>(card)];
+  //   }
+  // }
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<1>(left) < std::get<1>(right);});
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<0>(left) < std::get<0>(right);});
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<2>(left) < std::get<2>(right);});
@@ -79,12 +94,5 @@ int DiscardHoldemInformationSet::boardSize() {
 }
 
 std::string DiscardHoldemInformationSet::id() {
-  std::string id = name;
-  for (std::string action : history) {
-    id += "_";
-    id += action;
-  }
-  return id;
+  return name + history;
 }
-
-
