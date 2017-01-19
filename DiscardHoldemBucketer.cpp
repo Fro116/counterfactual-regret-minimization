@@ -4,7 +4,7 @@
 #include <pbots_calc.h>
 
 int DiscardHoldemBucketer::bucket(std::string key) {
-  if (key.size() < 10) {
+  if (key.size() == 10) {
     return bucketmap[key];
   } else {
     // std::vector<double> point;

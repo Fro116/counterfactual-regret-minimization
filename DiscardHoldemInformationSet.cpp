@@ -49,7 +49,7 @@ void DiscardHoldemInformationSet::updateName() {
   }
   int openSuit = 0;
   for (auto& card : cards) {
-    if (suitmap[std::get<1>(card)] != -1) {
+    if (suitmap[std::get<1>(card)] == -1) {
       suitmap[std::get<1>(card)] = openSuit;	      
       std::get<1>(card) = openSuit;
       openSuit++;
@@ -57,17 +57,6 @@ void DiscardHoldemInformationSet::updateName() {
       std::get<1>(card) = suitmap[std::get<1>(card)];
     }
   }  
-  // std::unordered_map<int, int> suitMapping;
-  // int openSuit = 0;
-  // for (auto& card : cards) {
-  //   if (suitMapping.find(std::get<1>(card)) == suitMapping.end()) {
-  //     suitMapping[std::get<1>(card)] = openSuit;	      
-  //     std::get<1>(card) = openSuit;
-  //     openSuit++;
-  //   } else {
-  //     std::get<1>(card) = suitMapping[std::get<1>(card)];
-  //   }
-  // }
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<1>(left) < std::get<1>(right);});
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<0>(left) < std::get<0>(right);});
   std::stable_sort(cards.begin(), cards.end(), [](auto &left, auto &right) {return std::get<2>(left) < std::get<2>(right);});
@@ -82,9 +71,9 @@ void DiscardHoldemInformationSet::updateName() {
 
   if (board.size() == 0) {
     id += cardset;    
-  } else {
-    // int bucket = DiscardHoldemBucketer::bucket(cardset);
-    // id += std::to_string(bucket);
+  } else if (board.size() == 3) {
+    int bucket = DiscardHoldemBucketer::bucket(cardset);
+    id += std::to_string(bucket);
   } 
   name = id;
 }

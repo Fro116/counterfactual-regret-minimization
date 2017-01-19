@@ -103,6 +103,7 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
     }
     else if (roundHistory.size() == 1) {
       if (roundHistory[0] == "RAISE") {
+	response.push_back("RAISE");	
 	response.push_back("CALL");
 	response.push_back("FOLD");
       } else if (roundHistory[0] == "CALL") {
@@ -116,10 +117,19 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
 	  response.push_back("CALL");
 	  response.push_back("FOLD");	  
 	}
-      }
+      } else if (roundHistory[0] == "RAISE") {
+	if (roundHistory[1] == "RAISE") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");	  
+	}
+      }      
     }
   }
   else if (turn == 1) {
+    // response.push_back("DISCARD");
+    response.push_back("CHECK");    
+  }
+  else if (turn == 2) {
     if (roundHistory.size() == 0) {
       response.push_back("BET");
       response.push_back("CHECK");
@@ -132,7 +142,7 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
   	response.push_back("BET");
   	response.push_back("CHECK");
       }
-    }
+    } 
     else if (roundHistory.size() == 2) {
       if (roundHistory[0] == "CHECK") {
   	if (roundHistory[1] == "BET") {
@@ -141,7 +151,12 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
   	}
       }
     }    
-  } else if (turn == 2) {
+  }
+  else if (turn == 3) {
+    // response.push_back("DISCARD");
+    response.push_back("CHECK");    
+  }
+  else if (turn == 4) {
     if (roundHistory.size() == 0) {
       response.push_back("BET");
       response.push_back("CHECK");
@@ -163,7 +178,8 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
   	}
       }
     }        
-  } else if (turn == 3) {
+  }
+  else if (turn == 5) {
     if (roundHistory.size() == 0) {
       response.push_back("BET");
       response.push_back("CHECK");
@@ -197,7 +213,7 @@ void DiscardHoldemGameState::makeMove(std::string action) {
     placeChips(playerToAct, amount);
     playerToAct = 1 - playerToAct;
   }  
-  if (action == "RAISE") {
+  else if (action == "RAISE") {
     int amount = pot;
     placeChips(playerToAct, amount);
     playerToAct = 1 - playerToAct;
@@ -225,17 +241,17 @@ void DiscardHoldemGameState::makeMove(std::string action) {
 	roundHistory.clear();
 	playerToAct = 1;
       }
-    } else if (turn == 1) {
-	board.push_back(getCard());
-	turn++;
-	roundHistory.clear();
-	playerToAct = 1;
     } else if (turn == 2) {
 	board.push_back(getCard());
 	turn++;
 	roundHistory.clear();
 	playerToAct = 1;
-    } else if (turn == 3) {
+    } else if (turn == 4) {
+	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+    } else if (turn == 5) {
 	isTerminalState = true;
     } 
   }
@@ -250,10 +266,9 @@ void DiscardHoldemGameState::makeMove(std::string action) {
       playerToAct = 1;      
     } else if (turn == 1) {
       if (roundHistory.size() > 1) {
-	board.push_back(getCard());
 	turn++;
 	roundHistory.clear();
-	playerToAct = 1;	
+	playerToAct = 1;
       }
     } else if (turn == 2) {
       if (roundHistory.size() > 1) {
@@ -261,12 +276,33 @@ void DiscardHoldemGameState::makeMove(std::string action) {
 	turn++;
 	roundHistory.clear();
 	playerToAct = 1;	
-      }      
+      }
     } else if (turn == 3) {
+      if (roundHistory.size() > 1) {
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;
+      }
+    } else if (turn == 4) {
+      if (roundHistory.size() > 1) {
+	board.push_back(getCard());
+	turn++;
+	roundHistory.clear();
+	playerToAct = 1;	
+      }      
+    } else if (turn == 5) {
       if (roundHistory.size() > 1) {      
 	isTerminalState = true;
       }
     }     
+  }
+  else if (action == "DISCARD") {
+    playerToAct = 1 - playerToAct;
+    if (roundHistory.size() > 1) {
+      turn++;
+      roundHistory.clear();
+      playerToAct = 1;
+    }
   }
 }
 
