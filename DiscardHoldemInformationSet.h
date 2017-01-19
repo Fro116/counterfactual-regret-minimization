@@ -31,12 +31,14 @@ class DiscardHoldemInformationSet {
   int boardSize();
   std::string id(); 
  private:
+  void updateName();
   int player;
   std::pair<Card,Card> hand;
   std::vector<Card> board;
   std::vector<std::string> history;
-  char ranks[13] = {'2','3','4','5','6','7','8','9','T','J','Q','K','A'};
-  char suits[4] = {'c','d','h','s'};  
+  std::string name;
+  static char ranks[];
+  static char suits[];
 };
 
 #endif

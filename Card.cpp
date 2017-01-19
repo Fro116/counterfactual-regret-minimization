@@ -23,3 +23,7 @@ int Card::rank() {
 int Card::suit() {
   return s;
 }
+
+bool Card::operator==(const Card &c1) const {
+    return (c1.r == r && c1.s == s);
+  }

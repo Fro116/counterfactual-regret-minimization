@@ -3,6 +3,10 @@
 
 #include <pbots_calc.h>
 
+std::string DiscardHoldemGameState::lastShowdown = "";
+double DiscardHoldemGameState::lastShowdownEquity = 0;  
+
+
 DiscardHoldemGameState::DiscardHoldemGameState() :
   pot(0),
   playerToAct(0),
@@ -61,20 +65,23 @@ std::pair<double, double> DiscardHoldemGameState::payout() {
     handstr += p1Hand.first.toString()+p1Hand.second.toString();
     handstr += ":";
     handstr += p2Hand.first.toString()+p2Hand.second.toString();
-  
     std::string boardstr = "";
     for (Card& c : board) {
       boardstr += c.toString();
     }
-    std::string deadstr = "";
-
-    Results* res = alloc_results();
-    calc(const_cast<char*>(handstr.c_str()), const_cast<char*>(boardstr.c_str()), const_cast<char*>(deadstr.c_str()), 1000000, res);
-    double win = *(res->ev);
-    free_results(res);
-
+    
+    if (handstr+boardstr != lastShowdown) {
+      std::string deadstr = "";
+      Results* res = alloc_results();
+      calc(const_cast<char*>(handstr.c_str()), const_cast<char*>(boardstr.c_str()), const_cast<char*>(deadstr.c_str()), 1000000, res);
+      lastShowdownEquity = *(res->ev);
+      free_results(res);      
+      lastShowdown = handstr+boardstr;
+    }
+    double win = lastShowdownEquity;
     double p1pay = (p1Chips - startingStack) + pot*win;
-    double p2pay = (p2Chips - startingStack) + pot*(1-win);  
+    double p2pay = (p2Chips - startingStack) + pot*(1-win);
+
   
     return std::make_pair(p1pay,p2pay);
   }
@@ -111,26 +118,27 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
 	}
       }
     }
-  } else if (turn == 1) {
+  }
+  else if (turn == 1) {
     if (roundHistory.size() == 0) {
       response.push_back("BET");
       response.push_back("CHECK");
     }
     else if (roundHistory.size() == 1) {
       if (roundHistory[0] == "BET") {
-	response.push_back("CALL");
-	response.push_back("FOLD");
+  	response.push_back("CALL");
+  	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-	response.push_back("BET");
-	response.push_back("CHECK");
+  	response.push_back("BET");
+  	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
       if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET") {
-	  response.push_back("CALL");
-	  response.push_back("FOLD");	  
-	}
+  	if (roundHistory[1] == "BET") {
+  	  response.push_back("CALL");
+  	  response.push_back("FOLD");	  
+  	}
       }
     }    
   } else if (turn == 2) {
@@ -140,19 +148,19 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
     }
     else if (roundHistory.size() == 1) {
       if (roundHistory[0] == "BET") {
-	response.push_back("CALL");
-	response.push_back("FOLD");
+  	response.push_back("CALL");
+  	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-	response.push_back("BET");
-	response.push_back("CHECK");
+  	response.push_back("BET");
+  	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
       if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET") {
-	  response.push_back("CALL");
-	  response.push_back("FOLD");	  
-	}
+  	if (roundHistory[1] == "BET") {
+  	  response.push_back("CALL");
+  	  response.push_back("FOLD");	  
+  	}
       }
     }        
   } else if (turn == 3) {
@@ -162,22 +170,22 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
     }
     else if (roundHistory.size() == 1) {
       if (roundHistory[0] == "BET") {
-	response.push_back("CALL");
-	response.push_back("FOLD");
+  	response.push_back("CALL");
+  	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-	response.push_back("BET");
-	response.push_back("CHECK");
+  	response.push_back("BET");
+  	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
       if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET") {
-	  response.push_back("CALL");
-	  response.push_back("FOLD");	  
-	}
+  	if (roundHistory[1] == "BET") {
+  	  response.push_back("CALL");
+  	  response.push_back("FOLD");	  
+  	}
       }
     }        
-  } 
+  }
   return response;
 }
 

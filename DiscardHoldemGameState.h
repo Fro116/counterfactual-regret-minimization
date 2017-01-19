@@ -48,6 +48,8 @@ class DiscardHoldemGameState {
     int playerToAct;
     bool isTerminalState;
     int turn;
+    static std::string lastShowdown;
+    static double lastShowdownEquity;      
 };
 
 #endif
