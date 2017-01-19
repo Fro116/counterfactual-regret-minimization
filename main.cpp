@@ -12,8 +12,8 @@
 #include "DiscardHoldemPayoutSet.h"
 #include "DiscardHoldemInformationSet.h"
 #include "DiscardHoldemBucketer.h"
-// #include "CounterFactualRegretMinimizer.h"
-#include "CounterFactualRegretMinimizer2p.h"
+#include "CounterFactualRegretMinimizer.h"
+// #include "CounterFactualRegretMinimizer2p.h"
 
 void train() {
   srand(time(NULL));
@@ -29,9 +29,10 @@ void train() {
   // std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> game(new RPSPayoutSet);
 
   std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> game(new DiscardHoldemPayoutSet);  
-  CounterFactualRegretMinimizer<std::string, DiscardHoldemInformationSet> trainer(game);  
+  CounterFactualRegretMinimizer<std::string, DiscardHoldemInformationSet> trainer(game);
+  trainer.solve("results.txt", 1, 10000, 1000);  
   // trainer.solve("results.txt", 10000, 1000);
-  trainer.train(5000);  
+  // trainer.train(5000);  
 
   // trainer.train(100000,2,1000);
   // }
@@ -39,8 +40,8 @@ void train() {
 }
 
 int main(int argc, char *argv[]) {
-  // DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/FlopBuckets10.txt");
-  // std::cout << "COMPLETED FLOPS:" << std::endl;
+  DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/FlopAssignments.txt");
+  std::cout << "COMPLETED FLOPS:" << std::endl;
   // DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/TurnBuckets10.txt");
   // std::cout << "COMPLETED TURNS:" << std::endl;  
   // DiscardHoldemBucketer::initCenters("/Users/kundanc/Coding/pokerbots/data/ClusterCenters.txt");
