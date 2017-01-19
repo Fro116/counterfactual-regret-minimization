@@ -30,8 +30,9 @@ class Card {
   bool operator==(const Card &c1) const;
  private:
   int r;
-  int s;
-  std::string str;
+  int s;  
+  static std::string ranks[];
+  static std::string suits[];  
 };
 
 #endif

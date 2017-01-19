@@ -35,10 +35,11 @@ class DiscardHoldemInformationSet {
   int player;
   std::pair<Card,Card> hand;
   std::vector<Card> board;
-  std::vector<std::string> history;
+  std::string history;
   std::string name;
   static char ranks[];
   static char suits[];
+  static int suitmap[];
 };
 
 #endif
