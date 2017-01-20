@@ -97,110 +97,175 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
   }
   if (turn == 0) {
     if (roundHistory.size() == 0) {
-      response.push_back("RAISE");
+      response.push_back("RAISE167");
       response.push_back("CALL");
       response.push_back("FOLD");      
     }
     else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "RAISE") {
-	response.push_back("RAISE");	
+      if (roundHistory[0] == "RAISE167") {
+	response.push_back("RAISE100");	
 	response.push_back("CALL");
 	response.push_back("FOLD");
       } else if (roundHistory[0] == "CALL") {
-	response.push_back("RAISE");
+	response.push_back("RAISE100");
 	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "CALL") {
-	if (roundHistory[1] == "RAISE") {
+      if (roundHistory[0] == "RAISE167") {
+	if (roundHistory[1] == "RAISE100") {
+	  response.push_back("RAISE100");	  
 	  response.push_back("CALL");
 	  response.push_back("FOLD");	  
 	}
-      } else if (roundHistory[0] == "RAISE") {
-	if (roundHistory[1] == "RAISE") {
+      } else if (roundHistory[0] == "CALL") {
+	if (roundHistory[1] == "RAISE100") {
+	  response.push_back("RAISE100");	  
 	  response.push_back("CALL");
 	  response.push_back("FOLD");	  
 	}
-      }      
+      } 
+    }
+    else if (roundHistory.size() == 3) {
+      if (roundHistory[0] == "RAISE167") {
+	if (roundHistory[1] == "RAISE100") {
+	  if (roundHistory[2] == "RAISE100") {
+	    response.push_back("CALL");
+	    response.push_back("FOLD");
+	  }
+	}
+      } else if (roundHistory[0] == "CALL") {
+	if (roundHistory[1] == "RAISE100") {
+	  if (roundHistory[2] == "RAISE100") {
+	    response.push_back("CALL");
+	    response.push_back("FOLD");	  
+	  }
+	}
+      }
     }
   }
   else if (turn == 1) {
-    // response.push_back("DISCARD");
     response.push_back("CHECK");    
   }
   else if (turn == 2) {
     if (roundHistory.size() == 0) {
-      response.push_back("BET");
+      response.push_back("BET066");
       response.push_back("CHECK");
     }
     else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET") {
+      if (roundHistory[0] == "BET066") {
+  	response.push_back("RAISE150");	
   	response.push_back("CALL");
   	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-  	response.push_back("BET");
+	response.push_back("BET066");
   	response.push_back("CHECK");
       }
-    } 
+    }
     else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "CHECK") {
-  	if (roundHistory[1] == "BET") {
-  	  response.push_back("CALL");
+      if (roundHistory[0] == "BET066") {
+	if (roundHistory[1] == "RAISE150") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");
+	}
+      } else if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {	
+  	  response.push_back("RAISE150");
   	  response.push_back("FOLD");	  
+  	}
+      }
+    }
+    else if (roundHistory.size() == 3) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {
+	  if (roundHistory[2] == "RAISE150") {
+	    response.push_back("CALL");
+	    response.push_back("FOLD");
+	  }
   	}
       }
     }    
   }
   else if (turn == 3) {
-    // response.push_back("DISCARD");
     response.push_back("CHECK");    
   }
   else if (turn == 4) {
     if (roundHistory.size() == 0) {
-      response.push_back("BET");
+      response.push_back("BET066");
       response.push_back("CHECK");
     }
     else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET") {
+      if (roundHistory[0] == "BET066") {
+  	response.push_back("RAISE150");	
   	response.push_back("CALL");
   	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-  	response.push_back("BET");
+	response.push_back("BET066");
   	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "CHECK") {
-  	if (roundHistory[1] == "BET") {
-  	  response.push_back("CALL");
+      if (roundHistory[0] == "BET066") {
+	if (roundHistory[1] == "RAISE150") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");
+	}
+      } else if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {	
+  	  response.push_back("RAISE150");
   	  response.push_back("FOLD");	  
   	}
       }
-    }        
+    }
+    else if (roundHistory.size() == 3) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {
+	  if (roundHistory[2] == "RAISE150") {
+	    response.push_back("CALL");
+	    response.push_back("FOLD");
+	  }
+  	}
+      }
+    }
   }
   else if (turn == 5) {
     if (roundHistory.size() == 0) {
-      response.push_back("BET");
+      response.push_back("BET066");
       response.push_back("CHECK");
     }
     else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET") {
+      if (roundHistory[0] == "BET066") {
+  	response.push_back("RAISE150");	
   	response.push_back("CALL");
   	response.push_back("FOLD");
       } else if (roundHistory[0] == "CHECK") {
-  	response.push_back("BET");
+	response.push_back("BET066");
   	response.push_back("CHECK");
       }
     }
     else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "CHECK") {
-  	if (roundHistory[1] == "BET") {
-  	  response.push_back("CALL");
+      if (roundHistory[0] == "BET066") {
+	if (roundHistory[1] == "RAISE150") {
+	  response.push_back("CALL");
+	  response.push_back("FOLD");
+	}
+      } else if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {	
+  	  response.push_back("RAISE150");
   	  response.push_back("FOLD");	  
   	}
       }
-    }        
+    }
+    else if (roundHistory.size() == 3) {
+      if (roundHistory[0] == "CHECK") {
+	if (roundHistory[1] == "BET066") {
+	  if (roundHistory[2] == "RAISE150") {
+	    response.push_back("CALL");
+	    response.push_back("FOLD");
+	  }
+  	}
+      }
+    }
   }
   return response;
 }
@@ -208,13 +273,15 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
 void DiscardHoldemGameState::makeMove(std::string action) {
   history.push_back(action);
   roundHistory.push_back(action);
-  if (action == "BET") {
-    int amount = pot;
+  if (action.substr(0,3) == "BET") {
+    int perc = std::stoi(action.substr(3));
+    int amount = pot*(perc/100.0);    
     placeChips(playerToAct, amount);
     playerToAct = 1 - playerToAct;
   }  
-  else if (action == "RAISE") {
-    int amount = pot;
+  else if (action.substr(0,5) == "RAISE") {
+    int perc = std::stoi(action.substr(5));
+    int amount = pot*(perc/100.0);
     placeChips(playerToAct, amount);
     playerToAct = 1 - playerToAct;
   }

@@ -40,8 +40,8 @@ int DiscardHoldemBucketer::bucket(std::string key) {
     //   }
     // }
     // return bucket;
-    return 0;
   }
+  return 0;  
 }
 
 void DiscardHoldemBucketer::init(std::string filename) {
