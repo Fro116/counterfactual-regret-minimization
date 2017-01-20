@@ -12,8 +12,8 @@
 #include "DiscardHoldemPayoutSet.h"
 #include "DiscardHoldemInformationSet.h"
 #include "DiscardHoldemBucketer.h"
-#include "CounterFactualRegretMinimizer.h"
-// #include "CounterFactualRegretMinimizer2p.h"
+// #include "CounterFactualRegretMinimizer.h"
+#include "CounterFactualRegretMinimizer2p.h"
 
 void train() {
   srand(time(NULL));
@@ -30,8 +30,8 @@ void train() {
 
   std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> game(new DiscardHoldemPayoutSet);  
   CounterFactualRegretMinimizer<std::string, DiscardHoldemInformationSet> trainer(game);
-  trainer.solve("results.txt", 1, 10000, 1000);  
-  // trainer.solve("results.txt", 10000, 1000);
+  // trainer.solve("results.txt", 1, 10000, 1000);  
+  trainer.solve("results.txt", 10000, 1000);
   // trainer.train(5000);  
 
   // trainer.train(100000,2,1000);
