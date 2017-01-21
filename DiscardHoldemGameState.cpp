@@ -9,7 +9,7 @@ double DiscardHoldemGameState::lastShowdownEquity = 0;
 
 
 DiscardHoldemGameState::DiscardHoldemGameState() :
-  pot(0),
+  pot(3),
   playerToAct(0),
   deck(),
   history(),
@@ -39,15 +39,8 @@ void DiscardHoldemGameState::beginGame() {
     preshuffle.erase(preshuffle.begin()+index);
     deck.push_back(c);
   }
-  std::string s = "";
-  for (auto c : deck) {
-    s += c.toString();
-  }
   p1Hand = std::make_pair(getCard(), getCard());
   p2Hand = std::make_pair(getCard(), getCard());
-  p1Chips -= 1;
-  p2Chips -= 2;
-  pot += 3;
 }
 
 Card DiscardHoldemGameState::getCard() {
@@ -365,17 +358,20 @@ void DiscardHoldemGameState::makeMove(std::string action) {
     }     
   }
   else if (action == "DCHECK") {
-    std::string key;
     if (playerToAct == 0) {
-      key = p1key;
+      int discard = DiscardHoldemBucketer::discard(p1key);
+      if (discard == 1) {
+	p1Hand.first = getCard();
+      } else if (discard == 2) {
+	p1Hand.second = getCard();
+      }      
     } else {
-      key = p2key;
-    }
-    int discard = DiscardHoldemBucketer::discard(key);
-    if (discard == 1) {
-      p1Hand.first = getCard();
-    } else if (discard == 2) {
-      p1Hand.second = getCard();
+      int discard = DiscardHoldemBucketer::discard(p2key);
+      if (discard == 1) {
+	p2Hand.first = getCard();
+      } else if (discard == 2) {
+	p2Hand.second = getCard();
+      }
     }
     
     playerToAct = 1 - playerToAct;    
