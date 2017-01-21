@@ -11,6 +11,23 @@ Card::Card(int rank, int suit) : r(rank), s(suit) {
 
 }
 
+Card::Card(std::string name) {
+  std::string rank = name.substr(0,1);
+  std::string suit = name.substr(1,2);
+  for (int i = 0; i < 13; ++i) {
+    if (rank == ranks[i]) {
+      r = i;
+      break;
+    }
+  }
+  for (int i = 0; i < 4; ++i) {
+    if (suit == suits[i]) {
+      s = i;
+      break;
+    }
+  }  
+}
+
 std::string Card::toString() {
   return ranks[r] + suits[s];
 }
