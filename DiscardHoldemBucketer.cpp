@@ -12,7 +12,6 @@ int DiscardHoldemBucketer::bucket(std::string key) {
     } else if (key == riverKeyCache2) {
       return riverValCache2;
     }
-    // std::cout << key << std::endl;
     std::vector<double> point;
     std::string hand = key.substr(0,4);
     std::string board = key.substr(4);
