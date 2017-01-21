@@ -29,14 +29,16 @@ class DiscardHoldemInformationSet {
   void setBoard(std::vector<Card> board);
   void makeMove(std::string action);
   int boardSize();
-  std::string id(); 
+  std::string id();
+  std::string key();   
  private:
   void updateName();
   int player;
   std::pair<Card,Card> hand;
   std::vector<Card> board;
   std::string history;
-  std::string name;
+  std::string name;  
+  std::string colex;
   static char ranks[];
   static char suits[];
   static int suitmap[];

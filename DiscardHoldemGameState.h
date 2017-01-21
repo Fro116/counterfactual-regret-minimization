@@ -44,7 +44,9 @@ class DiscardHoldemGameState {
     int call;
     bool folded;
     std::vector<std::string> history;
-    std::vector<std::string> roundHistory;    
+    std::vector<std::string> roundHistory;
+    std::string p1key;
+    std::string p2key;    
     int playerToAct;
     bool isTerminalState;
     int turn;

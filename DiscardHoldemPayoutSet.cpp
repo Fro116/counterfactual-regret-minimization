@@ -65,7 +65,9 @@ void DiscardHoldemPayoutSet::makeMove(std::string action) {
     }
   }
   sets[0].setHand(gameState.p1Hand);
-  sets[1].setHand(gameState.p2Hand);  
+  sets[1].setHand(gameState.p2Hand);
+  gameState.p1key = sets[0].key();
+  gameState.p2key = sets[1].key();  
 }
 
 std::vector<DiscardHoldemInformationSet> DiscardHoldemPayoutSet::infoSets() {

@@ -40,12 +40,16 @@ void train() {
 }
 
 int main(int argc, char *argv[]) {
-  DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/FlopAssignments.txt");
-  std::cerr << "LOADED FLOPS:" << std::endl;
-  DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/TurnAssignments.txt");
-  std::cerr << "LOADED TURNS:" << std::endl;
+  DiscardHoldemBucketer::initDiscards("/Users/kundanc/Coding/pokerbots/data/FlopDiscards.txt");
+  std::cerr << "LOADED FLOP DISCARDS:" << std::endl;
+  DiscardHoldemBucketer::initDiscards("/Users/kundanc/Coding/pokerbots/data/TurnDiscards.txt");
+  std::cerr << "LOADED TURN DISCARDS:" << std::endl;    
+  DiscardHoldemBucketer::initBuckets("/Users/kundanc/Coding/pokerbots/data/FlopAssignments.txt");
+  std::cerr << "LOADED FLOP BUCKETS:" << std::endl;
+  DiscardHoldemBucketer::initBuckets("/Users/kundanc/Coding/pokerbots/data/TurnAssignments.txt");
+  std::cerr << "LOADED TURN BUCKETS:" << std::endl;
   DiscardHoldemBucketer::initCenters("/Users/kundanc/Coding/pokerbots/data/RiverCenters.txt");
-  std::cerr << "LOADED CENTERS:" << std::endl;    
+  std::cerr << "LOADED RIVER BUCKETS:" << std::endl;    
   train();
   //  trainer.load("tmp");
   //  trainer.save("tmp");
