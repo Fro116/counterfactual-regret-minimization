@@ -2,6 +2,7 @@
 #include "Random.h"
 
 #include <pbots_calc.h>
+#include "DiscardHoldemBucketer.h"
 
 std::string DiscardHoldemGameState::lastShowdown = "";
 double DiscardHoldemGameState::lastShowdownEquity = 0;  
@@ -32,7 +33,7 @@ void DiscardHoldemGameState::beginGame() {
       preshuffle.push_back(Card(rank,suit));
     }
   }
-  for (int i = 0; i < 11; ++i) {
+  for (int i = 0; i < 13; ++i) {
     int index = Random::integer(0, preshuffle.size()-1);
     Card c = preshuffle[index];
     preshuffle.erase(preshuffle.begin()+index);
@@ -145,7 +146,7 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
     }
   }
   else if (turn == 1) {
-    response.push_back("CHECK");    
+    response.push_back("DCHECK");    
   }
   else if (turn == 2) {
     if (roundHistory.size() == 0) {
@@ -187,7 +188,7 @@ std::vector<std::string> DiscardHoldemGameState::actions() {
     }    
   }
   else if (turn == 3) {
-    response.push_back("CHECK");    
+    response.push_back("DCHECK");    
   }
   else if (turn == 4) {
     if (roundHistory.size() == 0) {
@@ -363,8 +364,21 @@ void DiscardHoldemGameState::makeMove(std::string action) {
       }
     }     
   }
-  else if (action == "DISCARD") {
-    playerToAct = 1 - playerToAct;
+  else if (action == "DCHECK") {
+    std::string key;
+    if (playerToAct == 0) {
+      key = p1key;
+    } else {
+      key = p2key;
+    }
+    int discard = DiscardHoldemBucketer::discard(key);
+    if (discard == 1) {
+      p1Hand.first = getCard();
+    } else if (discard == 2) {
+      p1Hand.second = getCard();
+    }
+    
+    playerToAct = 1 - playerToAct;    
     if (roundHistory.size() > 1) {
       turn++;
       roundHistory.clear();

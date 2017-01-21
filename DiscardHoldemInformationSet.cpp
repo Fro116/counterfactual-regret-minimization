@@ -66,9 +66,9 @@ void DiscardHoldemInformationSet::updateName() {
     cardset += ranks[std::get<0>(card)];
     cardset += suits[std::get<1>(card)];	    
   }
-  
-  std::string id = "";
 
+  colex = cardset;
+  std::string id = "";
   if (board.size() == 0) {
     id += cardset;    
   } else  {
@@ -76,6 +76,10 @@ void DiscardHoldemInformationSet::updateName() {
     id += std::to_string(bucket);
   } 
   name = id;
+}
+
+std::string DiscardHoldemInformationSet::key() {
+  return colex;
 }
 
 int DiscardHoldemInformationSet::boardSize() {

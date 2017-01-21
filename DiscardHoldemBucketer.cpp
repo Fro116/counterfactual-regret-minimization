@@ -59,7 +59,11 @@ int DiscardHoldemBucketer::bucket(std::string key) {
   return 0;  
 }
 
-void DiscardHoldemBucketer::init(std::string filename) {
+int DiscardHoldemBucketer::discard(std::string key) {
+  return discardmap[key];
+}
+
+void DiscardHoldemBucketer::initBuckets(std::string filename) {
   std::string line;
   std::ifstream file(filename);
   while (std::getline(file, line)) {
@@ -67,6 +71,27 @@ void DiscardHoldemBucketer::init(std::string filename) {
     std::string key = line.substr(0, loc);
     int bucket = std::stoi(line.substr(loc+1));
     bucketmap[key] = bucket;
+  }
+}
+
+void DiscardHoldemBucketer::initDiscards(std::string filename) {
+  std::string line;
+  std::ifstream file(filename);
+  while (std::getline(file, line)) {
+    auto loc = line.find_first_of(' ');
+    std::string key = line.substr(0, loc);
+    std::string val = line.substr(loc+1);
+    int bucket = -1;
+    if (val == "N") {
+      bucket = 0;
+    } else if (val == "L") {
+      bucket = 1;
+    } else if (val == "R") {
+      bucket = 2;
+    } else {
+      std::cout << "ERROR " << val << " NOT PARSED" << std::endl;
+    }
+    discardmap[key] = bucket;
   }
 }
 
@@ -93,6 +118,7 @@ double DiscardHoldemBucketer::distance(std::vector<double> a, std::vector<double
 }
 
 std::unordered_map<std::string, int> DiscardHoldemBucketer::bucketmap;
+std::unordered_map<std::string, int> DiscardHoldemBucketer::discardmap;
 std::vector<std::vector<double>> DiscardHoldemBucketer::centers;
 std::string DiscardHoldemBucketer::riverKeyCache1 = "";
 std::string DiscardHoldemBucketer::riverKeyCache2 = "";  

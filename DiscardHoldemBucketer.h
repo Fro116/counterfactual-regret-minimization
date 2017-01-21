@@ -22,12 +22,15 @@
 
 class DiscardHoldemBucketer {
  public:
-  static void init(std::string file);
-  static void initCenters(std::string file);  
+  static void initBuckets(std::string file);
+  static void initCenters(std::string file);
+  static void initDiscards(std::string file);
   static int bucket(std::string key);
+  static int discard(std::string key);  
   static double distance(std::vector<double> a, std::vector<double> b);
  private:
   static std::unordered_map<std::string, int> bucketmap;
+  static std::unordered_map<std::string, int> discardmap;  
   static std::vector<std::vector<double>> centers;
   static std::string riverKeyCache1;
   static std::string riverKeyCache2;  
