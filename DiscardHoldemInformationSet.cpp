@@ -71,7 +71,7 @@ void DiscardHoldemInformationSet::updateName() {
 
   if (board.size() == 0) {
     id += cardset;    
-  } else if (board.size() == 3) {
+  } else  {
     int bucket = DiscardHoldemBucketer::bucket(cardset);
     id += std::to_string(bucket);
   } 

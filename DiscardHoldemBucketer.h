@@ -28,7 +28,12 @@ class DiscardHoldemBucketer {
   static double distance(std::vector<double> a, std::vector<double> b);
  private:
   static std::unordered_map<std::string, int> bucketmap;
-  static std::vector<std::vector<double>> centers;  
+  static std::vector<std::vector<double>> centers;
+  static std::string riverKeyCache1;
+  static std::string riverKeyCache2;  
+  static int riverValCache1;
+  static int riverValCache2;
+  static int riverCache;
 };
 
 #endif

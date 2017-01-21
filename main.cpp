@@ -41,11 +41,11 @@ void train() {
 
 int main(int argc, char *argv[]) {
   DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/FlopAssignments.txt");
-  std::cout << "COMPLETED FLOPS:" << std::endl;
-  // DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/TurnBuckets10.txt");
-  // std::cout << "COMPLETED TURNS:" << std::endl;  
-  // DiscardHoldemBucketer::initCenters("/Users/kundanc/Coding/pokerbots/data/ClusterCenters.txt");
-  // std::cout << "COMPLETED CENTERS:" << std::endl;    
+  std::cerr << "LOADED FLOPS:" << std::endl;
+  DiscardHoldemBucketer::init("/Users/kundanc/Coding/pokerbots/data/TurnAssignments.txt");
+  std::cerr << "LOADED TURNS:" << std::endl;
+  DiscardHoldemBucketer::initCenters("/Users/kundanc/Coding/pokerbots/data/RiverCenters.txt");
+  std::cerr << "LOADED CENTERS:" << std::endl;    
   train();
   //  trainer.load("tmp");
   //  trainer.save("tmp");
