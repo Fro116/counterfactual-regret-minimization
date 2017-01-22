@@ -16,12 +16,11 @@ DiscardHoldemGameState::DiscardHoldemGameState() :
   roundHistory(),
   startingStack(200),
   p1Chips(200),
-  p2Chips(200),  
+  p2Chips(199),  
   isTerminalState(false),
   folded(false),
   turn(0),
-  board(),
-  call(1)
+  board()
 {
 
 }
@@ -74,9 +73,7 @@ std::pair<double, double> DiscardHoldemGameState::payout() {
     }
     double win = lastShowdownEquity;
     double p1pay = (p1Chips - startingStack) + pot*win;
-    double p2pay = (p2Chips - startingStack) + pot*(1-win);
-
-  
+    double p2pay = (p2Chips - (startingStack-1)) + pot*(1-win);
     return std::make_pair(p1pay,p2pay);
   }
 }
@@ -84,180 +81,205 @@ std::pair<double, double> DiscardHoldemGameState::payout() {
 std::vector<std::string> DiscardHoldemGameState::actions() {
   std::vector<std::string> response;
   int chips;
+  int oppChips;  
   if (playerToAct == 0) {
     chips = p1Chips;
+    oppChips = p2Chips;
   } else {
     chips = p2Chips;
+    oppChips = p1Chips;
   }
-  if (turn == 0) {
-    if (roundHistory.size() == 0) {
-      response.push_back("RAISE167");
-      response.push_back("CALL");
-      response.push_back("FOLD");      
+  if (chips == 0) {
+    if (turn == 1 || turn == 3) {
+      response.push_back("DCHECK");
+    } else {
+      response.push_back("CHECK");
     }
-    else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "RAISE167") {
-	response.push_back("RAISE100");	
+  }
+  else if (oppChips == 0) {
+    if (turn == 1 || turn == 3) {
+      response.push_back("DCHECK");
+    } else {
+      int p1Contributions = startingStack - p1Chips + 1;
+      int p2Contributions = (startingStack-1) - p2Chips + 2;
+      if (p1Contributions != p2Contributions) {
 	response.push_back("CALL");
-	response.push_back("FOLD");
-      } else if (roundHistory[0] == "CALL") {
-	response.push_back("RAISE100");
+      } else {
 	response.push_back("CHECK");
       }
-    }
-    else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "RAISE167") {
-	if (roundHistory[1] == "RAISE100") {
-	  response.push_back("RAISE100");	  
+    }    
+  }
+  else {
+    if (turn == 0) {
+      if (roundHistory.size() == 0) {
+	response.push_back("RAISE167");
+	response.push_back("CALL");
+	response.push_back("FOLD");      
+      }
+      else if (roundHistory.size() == 1) {
+	if (roundHistory[0] == "RAISE167") {
+	  response.push_back("RAISE238");	
 	  response.push_back("CALL");
-	  response.push_back("FOLD");	  
+	  response.push_back("FOLD");
+	} else if (roundHistory[0] == "CALL") {
+	  response.push_back("RAISE167");
+	  response.push_back("CHECK");
 	}
-      } else if (roundHistory[0] == "CALL") {
-	if (roundHistory[1] == "RAISE100") {
-	  response.push_back("RAISE100");	  
-	  response.push_back("CALL");
-	  response.push_back("FOLD");	  
+      }
+      else if (roundHistory.size() == 2) {
+	if (roundHistory[0] == "RAISE167") {
+	  if (roundHistory[1] == "RAISE238") {
+	    response.push_back("RAISE200");	  
+	    response.push_back("CALL");
+	    response.push_back("FOLD");	  
+	  }
+	} else if (roundHistory[0] == "CALL") {
+	  if (roundHistory[1] == "RAISE167") {
+	    response.push_back("RAISE238");	  
+	    response.push_back("CALL");
+	    response.push_back("FOLD");	  
+	  }
+	} 
+      }
+      else if (roundHistory.size() == 3) {
+	if (roundHistory[0] == "RAISE167") {
+	  if (roundHistory[1] == "RAISE238") {
+	    if (roundHistory[2] == "RAISE200") {
+	      response.push_back("CALL");
+	      response.push_back("FOLD");
+	    }
+	  }
+	} else if (roundHistory[0] == "CALL") {
+	  if (roundHistory[1] == "RAISE167") {
+	    if (roundHistory[2] == "RAISE238") {
+	      response.push_back("CALL");
+	      response.push_back("FOLD");	  
+	    }
+	  }
 	}
-      } 
+      }
     }
-    else if (roundHistory.size() == 3) {
-      if (roundHistory[0] == "RAISE167") {
-	if (roundHistory[1] == "RAISE100") {
-	  if (roundHistory[2] == "RAISE100") {
+    else if (turn == 1) {
+      response.push_back("DCHECK");    
+    }
+    else if (turn == 2) {
+      if (roundHistory.size() == 0) {
+	response.push_back("BET066");
+	response.push_back("CHECK");
+      }
+      else if (roundHistory.size() == 1) {
+	if (roundHistory[0] == "BET066") {
+	  response.push_back("RAISE200");	
+	  response.push_back("CALL");
+	  response.push_back("FOLD");
+	} else if (roundHistory[0] == "CHECK") {
+	  response.push_back("BET066");
+	  response.push_back("CHECK");
+	}
+      }
+      else if (roundHistory.size() == 2) {
+	if (roundHistory[0] == "BET066") {
+	  if (roundHistory[1] == "RAISE200") {
 	    response.push_back("CALL");
 	    response.push_back("FOLD");
 	  }
-	}
-      } else if (roundHistory[0] == "CALL") {
-	if (roundHistory[1] == "RAISE100") {
-	  if (roundHistory[2] == "RAISE100") {
-	    response.push_back("CALL");
+	} else if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {	
+	    response.push_back("RAISE200");
 	    response.push_back("FOLD");	  
 	  }
 	}
       }
+      else if (roundHistory.size() == 3) {
+	if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {
+	    if (roundHistory[2] == "RAISE200") {
+	      response.push_back("CALL");
+	      response.push_back("FOLD");
+	    }
+	  }
+	}
+      }    
     }
-  }
-  else if (turn == 1) {
-    response.push_back("DCHECK");    
-  }
-  else if (turn == 2) {
-    if (roundHistory.size() == 0) {
-      response.push_back("BET066");
-      response.push_back("CHECK");
+    else if (turn == 3) {
+      response.push_back("DCHECK");    
     }
-    else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET066") {
-  	response.push_back("RAISE150");	
-  	response.push_back("CALL");
-  	response.push_back("FOLD");
-      } else if (roundHistory[0] == "CHECK") {
+    else if (turn == 4) {
+      if (roundHistory.size() == 0) {
 	response.push_back("BET066");
-  	response.push_back("CHECK");
+	response.push_back("CHECK");
       }
-    }
-    else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "BET066") {
-	if (roundHistory[1] == "RAISE150") {
+      else if (roundHistory.size() == 1) {
+	if (roundHistory[0] == "BET066") {
+	  response.push_back("RAISE200");	
 	  response.push_back("CALL");
 	  response.push_back("FOLD");
+	} else if (roundHistory[0] == "CHECK") {
+	  response.push_back("BET066");
+	  response.push_back("CHECK");
 	}
-      } else if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {	
-  	  response.push_back("RAISE150");
-  	  response.push_back("FOLD");	  
-  	}
       }
-    }
-    else if (roundHistory.size() == 3) {
-      if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {
-	  if (roundHistory[2] == "RAISE150") {
+      else if (roundHistory.size() == 2) {
+	if (roundHistory[0] == "BET066") {
+	  if (roundHistory[1] == "RAISE200") {
 	    response.push_back("CALL");
 	    response.push_back("FOLD");
 	  }
-  	}
+	} else if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {	
+	    response.push_back("RAISE200");
+	    response.push_back("FOLD");	  
+	  }
+	}
       }
-    }    
-  }
-  else if (turn == 3) {
-    response.push_back("DCHECK");    
-  }
-  else if (turn == 4) {
-    if (roundHistory.size() == 0) {
-      response.push_back("BET066");
-      response.push_back("CHECK");
+      else if (roundHistory.size() == 3) {
+	if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {
+	    if (roundHistory[2] == "RAISE200") {
+	      response.push_back("CALL");
+	      response.push_back("FOLD");
+	    }
+	  }
+	}
+      }
     }
-    else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET066") {
-  	response.push_back("RAISE150");	
-  	response.push_back("CALL");
-  	response.push_back("FOLD");
-      } else if (roundHistory[0] == "CHECK") {
+    else if (turn == 5) {
+      if (roundHistory.size() == 0) {
 	response.push_back("BET066");
-  	response.push_back("CHECK");
+	response.push_back("CHECK");
       }
-    }
-    else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "BET066") {
-	if (roundHistory[1] == "RAISE150") {
+      else if (roundHistory.size() == 1) {
+	if (roundHistory[0] == "BET066") {
+	  response.push_back("RAISE200");	
 	  response.push_back("CALL");
 	  response.push_back("FOLD");
+	} else if (roundHistory[0] == "CHECK") {
+	  response.push_back("BET066");
+	  response.push_back("CHECK");
 	}
-      } else if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {	
-  	  response.push_back("RAISE150");
-  	  response.push_back("FOLD");	  
-  	}
       }
-    }
-    else if (roundHistory.size() == 3) {
-      if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {
-	  if (roundHistory[2] == "RAISE150") {
+      else if (roundHistory.size() == 2) {
+	if (roundHistory[0] == "BET066") {
+	  if (roundHistory[1] == "RAISE200") {
 	    response.push_back("CALL");
 	    response.push_back("FOLD");
 	  }
-  	}
-      }
-    }
-  }
-  else if (turn == 5) {
-    if (roundHistory.size() == 0) {
-      response.push_back("BET066");
-      response.push_back("CHECK");
-    }
-    else if (roundHistory.size() == 1) {
-      if (roundHistory[0] == "BET066") {
-  	response.push_back("RAISE150");	
-  	response.push_back("CALL");
-  	response.push_back("FOLD");
-      } else if (roundHistory[0] == "CHECK") {
-	response.push_back("BET066");
-  	response.push_back("CHECK");
-      }
-    }
-    else if (roundHistory.size() == 2) {
-      if (roundHistory[0] == "BET066") {
-	if (roundHistory[1] == "RAISE150") {
-	  response.push_back("CALL");
-	  response.push_back("FOLD");
-	}
-      } else if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {	
-  	  response.push_back("RAISE150");
-  	  response.push_back("FOLD");	  
-  	}
-      }
-    }
-    else if (roundHistory.size() == 3) {
-      if (roundHistory[0] == "CHECK") {
-	if (roundHistory[1] == "BET066") {
-	  if (roundHistory[2] == "RAISE150") {
-	    response.push_back("CALL");
-	    response.push_back("FOLD");
+	} else if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {	
+	    response.push_back("RAISE200");
+	    response.push_back("FOLD");	  
 	  }
-  	}
+	}
+      }
+      else if (roundHistory.size() == 3) {
+	if (roundHistory[0] == "CHECK") {
+	  if (roundHistory[1] == "BET066") {
+	    if (roundHistory[2] == "RAISE200") {
+	      response.push_back("CALL");
+	      response.push_back("FOLD");
+	    }
+	  }
+	}
       }
     }
   }
@@ -290,10 +312,17 @@ void DiscardHoldemGameState::makeMove(std::string action) {
     isTerminalState = true;
   }        
   else if (action == "CALL") {
+    int p1Contributions = startingStack - p1Chips + 1;
+    int p2Contributions = (startingStack-1) - p2Chips + 2;
+    int amount;      
+    if (playerToAct == 0) {
+      amount = p2Contributions-p1Contributions;
+    } else {
+      amount = p1Contributions-p2Contributions;
+    }
+    placeChips(playerToAct, amount);
+    playerToAct = 1 - playerToAct;          
     if (turn == 0) {
-      int amount = call;
-      placeChips(playerToAct, amount);      
-      playerToAct = 1 - playerToAct;      
       if (roundHistory.size() > 1) {
 	board.push_back(getCard());
 	board.push_back(getCard());
@@ -392,5 +421,4 @@ void DiscardHoldemGameState::placeChips(int player, int amount) {
     p2Chips -= amount;
   }
   pot += amount;
-  call = amount-call;
 }
