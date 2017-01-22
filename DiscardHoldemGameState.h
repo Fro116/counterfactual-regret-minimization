@@ -41,7 +41,6 @@ class DiscardHoldemGameState {
     int p1Chips;
     int p2Chips;
     int pot;
-    int call;
     bool folded;
     std::vector<std::string> history;
     std::vector<std::string> roundHistory;
