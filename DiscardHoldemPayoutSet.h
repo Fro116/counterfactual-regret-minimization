@@ -9,11 +9,11 @@
 /**
  * Class to encode discard poker as an abstract strategy game
  */
-
 class DiscardHoldemPayoutSet : public PayoutSet<std::string, DiscardHoldemInformationSet> {
  public:
   DiscardHoldemPayoutSet();
   std::vector<double> payout();
+  void beginGame();
   void makeMove(std::string action);
   std::vector<DiscardHoldemInformationSet> infoSets();
   std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> deepCopy();

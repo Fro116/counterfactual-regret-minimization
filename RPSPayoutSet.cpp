@@ -3,11 +3,16 @@
 RPSPayoutSet::RPSPayoutSet() :
   sets()
 {
+
+}
+
+void RPSPayoutSet::beginGame() {
   gameState = RPSGameState();
+  sets.clear();
   RPSInformationSet set1(0);
   sets.push_back(set1);
   RPSInformationSet set2(1);
-  sets.push_back(set2);
+  sets.push_back(set2);  
 }
 
 std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> RPSPayoutSet::deepCopy() {

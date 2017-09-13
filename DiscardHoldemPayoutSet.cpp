@@ -3,7 +3,12 @@
 DiscardHoldemPayoutSet::DiscardHoldemPayoutSet() :
   sets()
 {
+
+}
+
+void DiscardHoldemPayoutSet::beginGame() {
   gameState = DiscardHoldemGameState();
+  sets.clear();
   gameState.beginGame();
   DiscardHoldemInformationSet set1(0, gameState.p1Hand);
   sets.push_back(set1);

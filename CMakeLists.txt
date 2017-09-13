@@ -1,9 +1,9 @@
-cmake_minimum_required (VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.1.0)
 project (solver)
-add_executable (solver KuhnPokerPayoutSet.cpp RPSPayoutSet.cpp main.cpp DiscardHoldemPayoutSet.cpp DiscardHoldemGameState.cpp DiscardHoldemInformationSet.cpp DiscardHoldemBucketer.cpp Card.cpp)
+add_executable (solver KuhnPokerPayoutSet.cpp RPSPayoutSet.cpp main.cpp Card.cpp)
 SET(CMAKE_CXX_FLAGS "-std=c++14 -stdlib=libc++ -O3")
 
-find_library(PBOT pbots_calc)
-target_link_libraries(solver ${PBOT})
-find_library(PEVAL poker-eval)
-target_link_libraries(solver ${PEVAL})
+# to run the poker examples, uncomment the following lines
+# target_sources (solver DiscardHoldemPayoutSet.cpp DiscardHoldemGameState.cpp DiscardHoldemInformationSet.cpp DiscardHoldemBucketer.cpp)
+# find_library(PBOT pbots_calc)
+# target_link_libraries(solver ${PBOT})
