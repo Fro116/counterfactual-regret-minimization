@@ -11,11 +11,11 @@ class KuhnPokerInformationSet;
 /**
  * Class to describle Kuhn poker as an abstract strategy game.
  */
-
 class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet> {
  public:
   KuhnPokerPayoutSet();
   std::vector<double> payout();
+  void beginGame();
   void makeMove(std::string action);
   std::vector<KuhnPokerInformationSet> infoSets();
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> deepCopy();

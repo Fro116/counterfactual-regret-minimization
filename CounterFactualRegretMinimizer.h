@@ -114,8 +114,8 @@ void CounterFactualRegretMinimizer<S, T>::solve(std::string outputFile, long ite
 template <class S, class T>
 void CounterFactualRegretMinimizer<S, T>::train(long iterations) {
   for (long i = 0; i < iterations; ++i) {
-    std::shared_ptr<PayoutSet<S, T>> payoutCopy = payout->deepCopy();
-    train(payoutCopy, 1, 1);
+    payout->beginGame();
+    train(payout, 1, 1);
   }
 }
 
@@ -170,7 +170,6 @@ double CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T
     }    
   }
   if (player == 0) {
-    
     return nodeUtil;
   } else {
     return -nodeUtil;

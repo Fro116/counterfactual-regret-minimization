@@ -16,6 +16,7 @@ class RPSPayoutSet : public PayoutSet<std::string, RPSInformationSet> {
  public:
   RPSPayoutSet();
   std::vector<double> payout();
+  void beginGame();
   void makeMove(std::string action);
   std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> deepCopy();
   std::vector<RPSInformationSet> infoSets();

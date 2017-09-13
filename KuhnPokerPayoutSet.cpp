@@ -10,6 +10,15 @@ KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
   sets.push_back(set2);
 }
 
+void KuhnPokerPayoutSet::beginGame() {
+  gameState = KuhnPokerGameState();
+  sets.clear();
+  KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
+  sets.push_back(set1);
+  KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
+  sets.push_back(set2);
+}
+
 std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayoutSet::deepCopy() {
   std::shared_ptr<KuhnPokerPayoutSet> copy(new KuhnPokerPayoutSet);
   copy->gameState = gameState;

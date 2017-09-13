@@ -28,6 +28,11 @@ class PayoutSet {
   virtual std::vector<double> payout() = 0;
 
   /**
+   * Starts a new game
+   */
+  virtual void beginGame() = 0;
+
+  /**
    * Modifies the game state to account for the given move
    */
   virtual void makeMove(S action) = 0;
