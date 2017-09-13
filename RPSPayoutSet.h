@@ -1,34 +1,21 @@
 #ifndef RPSPayoutSet_1484020875368595
 #define RPSPayoutSet_1484020875368595
 
-#include <iostream>
 #include <string>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <cassert>
-#include <limits>
-#include <chrono>
-#include <set>
-#include <unordered_set>
-#include <cstdlib>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <thread>
-#include <mutex>
 
 #include "PayoutSet.h"
+
 class RPSPayoutSet;
 class RPSInformationSet;
+
+/**
+ * Class to describe Rock-Paper-Scissors as an abstract strategy game.
+ */
 
 class RPSPayoutSet : public PayoutSet<std::string, RPSInformationSet> {
  public:
   RPSPayoutSet();
   std::vector<double> payout();
-  void beginGame();
   void makeMove(std::string action);
   std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> deepCopy();
   std::vector<RPSInformationSet> infoSets();

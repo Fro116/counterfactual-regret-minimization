@@ -1,9 +1,8 @@
 #include "DiscardHoldemGameState.h"
-#include "Random.h"
 
 #include <pbots_calc.h>
 #include "DiscardHoldemBucketer.h"
-
+#include <cstdlib>
 std::string DiscardHoldemGameState::lastShowdown = "";
 double DiscardHoldemGameState::lastShowdownEquity = 0;  
 
@@ -33,7 +32,8 @@ void DiscardHoldemGameState::beginGame() {
     }
   }
   for (int i = 0; i < 13; ++i) {
-    int index = Random::integer(0, preshuffle.size()-1);
+    int size = static_cast<int>(preshuffle.size());
+    int index = std::abs(std::rand() % (size-1)) + 1;
     Card c = preshuffle[index];
     preshuffle.erase(preshuffle.begin()+index);
     deck.push_back(c);

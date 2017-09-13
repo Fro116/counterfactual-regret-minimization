@@ -3,11 +3,15 @@
 RPSPayoutSet::RPSPayoutSet() :
   sets()
 {
-
+  gameState = RPSGameState();
+  RPSInformationSet set1(0);
+  sets.push_back(set1);
+  RPSInformationSet set2(1);
+  sets.push_back(set2);
 }
 
 std::shared_ptr<PayoutSet<std::string, RPSInformationSet>> RPSPayoutSet::deepCopy() {
-  std::shared_ptr<RPSPayoutSet> copy(new RPSPayoutSet);
+  std::shared_ptr<RPSPayoutSet> copy(new RPSPayoutSet());
   copy->gameState = gameState;
   copy->sets = sets;
   return copy;
@@ -39,15 +43,6 @@ std::vector<double> RPSPayoutSet::payout() {
   return results;
 }
   
-void RPSPayoutSet::beginGame() {
-  gameState = RPSGameState();
-  sets.clear();
-  RPSInformationSet set1(0);
-  sets.push_back(set1);
-  RPSInformationSet set2(1);
-  sets.push_back(set2);
-}
-
 bool RPSPayoutSet::isTerminalState() {
   return gameState.history.size() == 2;
 }

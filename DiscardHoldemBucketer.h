@@ -1,24 +1,16 @@
 #ifndef DiscardHoldemBucketer_1484690934564688
 #define DiscardHoldemBucketer_1484690934564688
 
-#include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <cassert>
-#include <limits>
-#include <chrono>
-#include <set>
-#include <unordered_set>
-#include <cstdlib>
-#include <tuple>
-#include <map>
 #include <unordered_map>
-#include <thread>
-#include <mutex>
+
+/** 
+ * Class to perform bucketing on hand combinations in
+ * discard poker. Bucketing groups similar information
+ * sets together to reduce the branching factor of
+ * a game tree.
+ */
 
 class DiscardHoldemBucketer {
  public:

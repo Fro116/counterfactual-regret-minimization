@@ -1,6 +1,8 @@
 #include "DiscardHoldemBucketer.h"
 
 #include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <iostream>
 #include <pbots_calc.h>
 
 int DiscardHoldemBucketer::bucket(std::string key) {
