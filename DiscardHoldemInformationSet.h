@@ -1,27 +1,15 @@
 #ifndef DiscardHoldemInformationSet_1484584494112186
 #define DiscardHoldemInformationSet_1484584494112186
 
-#include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <cassert>
-#include <limits>
-#include <chrono>
-#include <set>
-#include <unordered_set>
-#include <cstdlib>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <thread>
-#include <mutex>
 
 #include "Card.h"
 
+/**
+ * Class to describe the information a player receives while
+ * playing Discard poker
+ */
 class DiscardHoldemInformationSet {
  public:
   DiscardHoldemInformationSet(int player, std::pair<Card,Card> hand);

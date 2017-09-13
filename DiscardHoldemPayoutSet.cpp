@@ -3,7 +3,12 @@
 DiscardHoldemPayoutSet::DiscardHoldemPayoutSet() :
   sets()
 {
-
+  gameState = DiscardHoldemGameState();
+  gameState.beginGame();
+  DiscardHoldemInformationSet set1(0, gameState.p1Hand);
+  sets.push_back(set1);
+  DiscardHoldemInformationSet set2(1, gameState.p2Hand);
+  sets.push_back(set2);
 }
 
 std::shared_ptr<PayoutSet<std::string, DiscardHoldemInformationSet>> DiscardHoldemPayoutSet::deepCopy() {
@@ -28,16 +33,6 @@ std::vector<double> DiscardHoldemPayoutSet::payout() {
   results.push_back(payout.first);
   results.push_back(payout.second);  
   return results;
-}
-  
-void DiscardHoldemPayoutSet::beginGame() {
-  gameState = DiscardHoldemGameState();
-  gameState.beginGame();
-  sets.clear();
-  DiscardHoldemInformationSet set1(0, gameState.p1Hand);
-  sets.push_back(set1);
-  DiscardHoldemInformationSet set2(1, gameState.p2Hand);
-  sets.push_back(set2);
 }
 
 bool DiscardHoldemPayoutSet::isTerminalState() {

@@ -1,26 +1,21 @@
 #ifndef __KuhnPokerPayoutSet__1454377138487349__
 #define __KuhnPokerPayoutSet__1454377138487349__
 
-#include <iostream>
 #include <string>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <cassert>
-#include <limits>
 
 #include "PayoutSet.h"
 
 class KuhnPokerGameState;
 class KuhnPokerInformationSet;
 
+/**
+ * Class to describle Kuhn poker as an abstract strategy game.
+ */
+
 class KuhnPokerPayoutSet : public PayoutSet<std::string, KuhnPokerInformationSet> {
  public:
   KuhnPokerPayoutSet();
   std::vector<double> payout();
-  void beginGame();
   void makeMove(std::string action);
   std::vector<KuhnPokerInformationSet> infoSets();
   std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> deepCopy();
@@ -61,7 +56,5 @@ class KuhnPokerInformationSet {
   int pot;
   std::vector<std::string> history;
 };
-
-
 
 #endif

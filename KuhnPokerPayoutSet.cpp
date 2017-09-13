@@ -3,7 +3,11 @@
 KuhnPokerPayoutSet::KuhnPokerPayoutSet() :
   sets()
 {
-
+  gameState = KuhnPokerGameState();
+  KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
+  sets.push_back(set1);
+  KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
+  sets.push_back(set2);
 }
 
 std::shared_ptr<PayoutSet<std::string, KuhnPokerInformationSet>> KuhnPokerPayoutSet::deepCopy() {
@@ -36,15 +40,6 @@ std::vector<double> KuhnPokerPayoutSet::payout() {
   return results;
 }
   
-void KuhnPokerPayoutSet::beginGame() {
-  gameState = KuhnPokerGameState();
-  sets.clear();
-  KuhnPokerInformationSet set1(0, gameState.p1Card, gameState.pot);
-  sets.push_back(set1);
-  KuhnPokerInformationSet set2(1, gameState.p2Card, gameState.pot);
-  sets.push_back(set2);
-}
-
 bool KuhnPokerPayoutSet::isTerminalState() {
   return gameState.isTerminalState;
 }
@@ -83,8 +78,8 @@ KuhnPokerPayoutSet::KuhnPokerGameState::KuhnPokerGameState() :
   int p1 = 1;
   int p2 = 1;
   while (p1 == p2) {
-    p1 = std::abs(std::rand() % 3) + 1; //rand.integer(1,3);
-    p2 = std::abs(std::rand() % 3) + 1; //rand.integer(1,3);
+    p1 = std::abs(std::rand() % 3) + 1;
+    p2 = std::abs(std::rand() % 3) + 1;
   }
   if (p1 == 1)
     p1Card = "A";

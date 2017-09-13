@@ -1,27 +1,14 @@
 #ifndef DiscardHoldemGameState_1484529653179970
 #define DiscardHoldemGameState_1484529653179970
 
-#include <iostream>
 #include <string>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-#include <sstream>
-#include <memory>
-#include <cassert>
-#include <limits>
-#include <chrono>
-#include <set>
-#include <unordered_set>
-#include <cstdlib>
-#include <tuple>
-#include <map>
-#include <unordered_map>
-#include <thread>
-#include <mutex>
 
 #include "Card.h"
 
+/**
+ * Class to encode the rules of poker
+ */
 class DiscardHoldemGameState {
   friend class DiscardHodlemPayoutSet;
   public:
@@ -30,7 +17,6 @@ class DiscardHoldemGameState {
     std::vector<std::string> actions();
     void makeMove(std::string action);
     std::pair<double, double> payout();    
-    //  private:
     Card getCard();
     void placeChips(int player, int amount);    
     std::vector<Card> deck;
