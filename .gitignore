@@ -1,15 +1,4 @@
-#build files
 CMake*
 Makefile
 *.o
-compile_commands.json
-.gradle*
-.clang_complete
-.DS_Store
-
-#Executables
-solver
-
-#Temporary files
-tmp
-*.txt
+.*
