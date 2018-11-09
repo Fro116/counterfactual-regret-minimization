@@ -1,108 +1,142 @@
-#ifndef __CounterFactualRegretMinimizer__1454457269771660__
-#define __CounterFactualRegretMinimizer__1454457269771660__
+#pragma once
 
-#include <iostream>
-#include <string>
+#include <algorithm>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <sstream>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
-#include "PayoutSet.h"
+#include "Game.h"
 
 /**
  * Template header-only library to perform Counterfactual Regret
- * Minimization on two player games.
+ * Minimization on multiplayer games.
  *
- * S is the type of actions. T is the type of informationSets. 
+ * @tparam S the type of actions
  */
-template <class S, class T>
+template <class S>
 class CounterFactualRegretMinimizer {
- public:
+public:
+
   /**
    * Initializes the CFR algorithm
    */
-  CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout);
+  CounterFactualRegretMinimizer(std::shared_ptr<const Game<S>> game);
 
   /**
-   * Runs CFR for an infinite number of iterations. The computed strategy will 
+   * Runs CFR for an infinite number of iterations. The computed strategy will
    * periodically be saved to an output file.
    *
    * @param outputFile the file to save the current strategy to
-   * @param itersPerSave the number of iterations before the strategy should be saved.
-   * @param itersPerUpdate the number of iterations before a message is printed to
-   *        the console to confirm that a program is running.
+   * @param itersPerSave the number of iterations before the strategy
+   *     should be checkpointed
+   * @param itersPerUpdate the number of iterations before an update message
+   *     is printed to the console
    */
-  void solve(std::string outputFile, long itersPerSave, long itersPerUpdate);
+  void solve(std::string outputFile, std::size_t itersPerSave,
+             std::size_t itersPerUpdate);
 
   /**
    * Runs CFR for the given number of iterations
    *
    * @param iterations the number of iterations to run
    */
-  void train(long iterations);
+  void train(std::size_t iterations);
 
   /**
    * Saves the current strategy to the given file
+   *
+   * @param filename the file to save to
    */
   void save(std::string filename);
 
   /**
-   * Loads the strategy that was saved into the file. Training can be 
+   * Loads the strategy that was saved into the file. Training can be
    * resumed without loss of infomation.
+   *
+   * @param filename the file to load from
    */
   void load(std::string filename);
- private:
-  std::vector<double> getStrategy(int player, std::string id, std::vector<S>& actions, double weight);
+
+private:
+
+  /**
+   * Calculates the players current strategy for a given information set
+   *
+   * @param player the player to move
+   * @param id the information set's id
+   * @param actions the set of possible actions
+   *
+   * @return the probability distribution over the player's actions
+   */
+  std::vector<double> getStrategy(int player, std::string id,
+                                  const std::vector<S>& actions) const;
 
   /**
    * Analyzes one node of the game tree and recursively updates the strategy
    *
    * @param payouts the abstract strategy game to train
-   * @param p9 the counterfactual probability that player 0 will cause this game state to occur
-   * @param p1 the counterfactual probability that player 1 will cause this game state to occur
+   * @param probabilities the i-th element is the probability that player i
+   *     causes this information set to occur
    */
-  double train(std::shared_ptr<PayoutSet<S, T>> payouts, double p0, double p1);
+  std::vector<double> train(std::shared_ptr<const Game<S>> game,
+                            const std::vector<double> probabilities);
 
-  //! The abstract strategy game
-  std::shared_ptr<PayoutSet<S, T>> payout;
+  // The abstract strategy game
+  const std::shared_ptr<const Game<S>> game;
 
-  //! The number of players in the game
-  int numPlayers;
+  // The number of players in the game
+  const std::size_t numPlayers;
 
-  //! The accumulated regrets for each action in an action state over all iterations
-  std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateRegrets;
+  // The accumulated regrets for each action. The data is stored in the format
+  //     player -> information set id -> list of actions
+  std::vector<std::unordered_map<
+                std::string, std::vector<double>>> aggregateRegrets;
 
-  //! The number of times each action was selected from an action state over all iterations
-  std::vector<std::unordered_map<std::string,std::vector<double>>> aggregateStrategies;
+  // The number of times each action was selected during the course of training
+  //     The data is stored in the format player -> information set id ->
+  //     list of actions
+  std::vector<std::unordered_map<
+                std::string, std::vector<double>>> aggregateStrategies;
+
 };
 
 
-template <class S, class T>
-CounterFactualRegretMinimizer<S, T>::CounterFactualRegretMinimizer(std::shared_ptr<PayoutSet<S, T>> payout) :
-  payout(payout),
-  numPlayers(payout->numPlayers()),
-  aggregateRegrets(),
-  aggregateStrategies()
+template <class S>
+CounterFactualRegretMinimizer<S>::CounterFactualRegretMinimizer(
+  std::shared_ptr<const Game<S>> game) :
+  game(game),
+  numPlayers(game->numPlayers()),
+  aggregateRegrets(game->numPlayers(), std::unordered_map<std::string,
+                   std::vector<double>>()),
+  aggregateStrategies(game->numPlayers(), std::unordered_map<std::string,
+                      std::vector<double>>())
 {
-  for (int i = 0; i < numPlayers; ++i) {
-    aggregateRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
-    aggregateStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
-  }
+
 }
 
 
-template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::solve(std::string outputFile, long itersPerSave, long itersPerConvegenceTest) {    
-  bool converged = false;
-  long saveCounter = 0;
-  long totalIterations = 0;
+template <class S>
+void CounterFactualRegretMinimizer<S>::solve(
+  std::string outputFile, std::size_t itersPerSave, std::size_t itersPerUpdate) {
+
+  // initialize training counters
+  std::size_t saveCounter = 0;
+  std::size_t totalIterations = 0;
   std::cout << "BEGINNING TRAINING" << std::endl;
-  while (!converged) {
-    train(itersPerConvegenceTest);
-    saveCounter += itersPerConvegenceTest;
-    totalIterations += itersPerConvegenceTest;
+
+  while (true) {
+    // train the model
+    train(itersPerUpdate);
+
+    // print an update to the console
+    saveCounter += itersPerUpdate;
+    totalIterations += itersPerUpdate;
     std::cout << "COMPLETED ITERATION: " << totalIterations << std::endl;
+
+    // save a checkpoint
     if (saveCounter >= itersPerSave) {
       saveCounter %= itersPerSave;
       std::cout << "SAVING..." << std::endl;
@@ -111,121 +145,156 @@ void CounterFactualRegretMinimizer<S, T>::solve(std::string outputFile, long ite
   }
 }
 
-template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::train(long iterations) {
-  for (long i = 0; i < iterations; ++i) {
-    payout->beginGame();
-    train(payout, 1, 1);
+template <class S>
+void CounterFactualRegretMinimizer<S>::train(std::size_t iterations) {
+  // train on the game
+  for (std::size_t i = 0; i < iterations; ++i) {
+    auto copy = game->deepCopy();
+    copy->beginGame();
+    const std::vector<double> probabilities(numPlayers, 1.0);
+    train(copy, probabilities);
   }
 }
 
 
-template <class S, class T>
-double CounterFactualRegretMinimizer<S, T>::train(std::shared_ptr<PayoutSet<S, T>> payouts, double p0, double p1) {
-  //return payoff for terminal states
-  int player = payouts->playerToAct();  
-  if (payouts->isTerminalState()) {
-    return payouts->payout()[0];
+template <class S>
+std::vector<double> CounterFactualRegretMinimizer<S>::train(
+  const std::shared_ptr<const Game<S>> game,
+  const std::vector<double> probabilities) {
+
+  // check if the game has ended
+  const int player = game->playerToAct();
+  if (game->isTerminalState()) {
+    return game->payout();
   }
-  //create node if none exists
-  std::vector<T> sets = payouts->infoSets();
-  std::string id = payouts->uniqueIdentifier(sets[player]);
-  auto actions = payouts->actions();  
-  if (aggregateStrategies[player].find(id) == aggregateStrategies[player].end()) {
-    std::vector<double> dummy;
-    for (std::size_t i = 0; i < actions.size(); ++i) {
-      dummy.push_back(0);
+
+  // create the information set node
+  const std::string id = game->informationSet();
+  const std::vector<S> actions = game->actions();
+  if (aggregateStrategies[player].find(id)
+      == aggregateStrategies[player].end()) {
+
+    aggregateStrategies[player][id] = std::vector<double>(actions.size());
+    aggregateRegrets[player][id] = std::vector<double>(actions.size());
+  }
+
+  // determine the player's strategy
+  const std::vector<double> strategy = getStrategy(player, id, actions);
+  std::vector<std::vector<double>> actionUtilities;
+  std::vector<double> nodeUtilities(numPlayers, 0);
+
+  // Recursively train on each action
+  for (std::size_t action = 0; action < actions.size(); ++action) {
+    // branch on the player's action
+    std::shared_ptr<Game<S>> gameCopy = game->deepCopy();
+    gameCopy->makeMove(actions[action]);
+    std::vector<double> probabilitiesCopy = probabilities;
+    probabilitiesCopy[player] *= strategy[action];
+
+    // update utilities
+    actionUtilities.push_back(train(gameCopy, probabilitiesCopy));
+    for (std::size_t agent = 0; agent < numPlayers; ++agent) {
+      nodeUtilities[agent] += strategy[action]*actionUtilities[action][agent];
     }
-    aggregateStrategies[player][id] = dummy;
-    aggregateRegrets[player][id] = dummy;
   }
-  //For each action, call cfr
-  double weight;
-  if (player == 0) {
-    weight = p0;
-  } else {
-    weight = p1;
-  }
-  std::vector<double> strategy = getStrategy(player, id, actions, weight);
-  std::vector<double> util;
-  double nodeUtil = 0;
-  for (std::size_t i = 0; i < actions.size(); ++i) {
-    std::shared_ptr<PayoutSet<S, T>> copy = payouts->deepCopy();
-    copy->makeMove(actions[i]);
-    if (player == 0) {
-      util.push_back(train(copy, p0*strategy[i], p1));
-    } else {
-      util.push_back(-train(copy, p0, p1*strategy[i]));
+
+  // accumulate counterfactual regret
+  for (std::size_t action = 0; action < actions.size(); ++action) {
+    // calculate the counterfactual probability
+    double counterfactual = 1.0;
+    for (int agent = 0; agent < numPlayers; ++agent) {
+      if (agent != player) {
+        counterfactual *= probabilities[agent];
+      }
     }
-    nodeUtil += strategy[i]*util[i];
+
+    // update regrets
+    const double regret = actionUtilities[action][player]
+      - nodeUtilities[player];
+    aggregateRegrets[player][id][action] += counterfactual * regret;
+    aggregateStrategies[player][id][action] +=
+      counterfactual * strategy[action];
   }
-  //accumulate counterfactual regret
-  for (std::size_t i = 0; i < actions.size(); ++i) {
-    double regret = util[i] - nodeUtil;
-    if (player == 0) {
-      aggregateRegrets[player][id][i] += p1 * regret;
-    }
-    if (player == 1) {
-      aggregateRegrets[player][id][i] += p0 * regret;
-    }    
-  }
-  if (player == 0) {
-    return nodeUtil;
-  } else {
-    return -nodeUtil;
-  }
+
+  return nodeUtilities;
 }
 
-template <class S, class T>
-std::vector<double> CounterFactualRegretMinimizer<S, T>::getStrategy(int player, std::string id, std::vector<S>& actions, double weight) {
+template <class S>
+std::vector<double> CounterFactualRegretMinimizer<S>::getStrategy(
+  int player, std::string id, const std::vector<S>& actions) const {
+
+  // load historical data about this information set
+  const std::vector<double>& cumulativeRegrets = aggregateRegrets[player]
+    .find(id)->second;
   std::vector<double> strategy;
-  strategy.reserve(actions.size());
-  std::vector<double>& cumulativeRegrets = aggregateRegrets[player][id];
-  std::vector<double>& cumulativeStrategies = aggregateStrategies[player][id];  
   double normalizingSum = 0;
-  for (int i = 0; i < actions.size(); ++i) {
+
+  // choose actions with probability in proportion to their regret
+  for (int action = 0; action < actions.size(); ++action) {
     double regret;
-    if (cumulativeRegrets[i]> 0) {
-      regret = cumulativeRegrets[i];
+    if (cumulativeRegrets[action]> 0) {
+      regret = cumulativeRegrets[action];
     } else {
       regret = 0;
     }
     strategy.push_back(regret);
     normalizingSum += regret;
   }
-  for (int i = 0; i < actions.size(); ++i) {
+
+  // normalize the strategy into a probability distribution
+  for (int action = 0; action < actions.size(); ++action) {
     if (normalizingSum > 0) {
-      strategy[i] /= normalizingSum;
+      strategy[action] /= normalizingSum;
     } else {
-      strategy[i] = 1.0/actions.size();
+      strategy[action] = 1.0/actions.size();
     }
-    cumulativeStrategies[i] += weight * strategy[i];
   }
+
   return strategy;
 }
 
-template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
+template <class S>
+void CounterFactualRegretMinimizer<S>::save(std::string filename) {
   std::ofstream file(filename);
-  file << "STRATEGIES" << "\n";
-  for (int i = 0; i < numPlayers; ++i) {
-    file << "PLAYER: " << i << std::endl;
-    for (auto& it : aggregateStrategies[i]) {
+
+  // write the final strategy
+  file << "PROBABILITIES" << "\n";
+  for (int player = 0; player < numPlayers; ++player) {
+    file << "PLAYER: " << player << std::endl;
+    for (const auto& it : aggregateStrategies[player]) {
       file << it.first;
+      const double total = std::accumulate(it.second.begin(), it.second.end(),
+                                           0.0);
       for (double value : it.second) {
-	file << " " << value;
+        file << " " << value / total;
       }
       file << "\n";
     }
     file << "END" << "\n";
   }
-  file << "REGRETS" << "\n";
-  for (int i = 0; i < numPlayers; ++i) {
-    file << "PLAYER: " << i << std::endl;
-    for (auto& it : aggregateRegrets[i]) {
-      file << it.first;
+
+  // print out the raw data for the aggregate strategies
+  file << "STRATEGIES" << "\n";
+  for (int player = 0; player < numPlayers; ++player) {
+    file << "PLAYER: " << player << std::endl;
+    for (const auto& it : aggregateStrategies[player]) {
+      file << it.first << "\t";
       for (double value : it.second) {
-	file << " " << value;
+        file << " " << value;
+      }
+      file << "\n";
+    }
+    file << "END" << "\n";
+  }
+
+  // print out the raw data for the aggregate regrets
+  file << "REGRETS" << "\n";
+  for (int player = 0; player < numPlayers; ++player) {
+    file << "PLAYER: " << player << std::endl;
+    for (const auto& it : aggregateRegrets[player]) {
+      file << it.first << "\t";
+      for (double value : it.second) {
+        file << " " << value;
       }
       file << "\n";
     }
@@ -233,56 +302,76 @@ void CounterFactualRegretMinimizer<S, T>::save(std::string filename) {
   }
 }
 
-template <class S, class T>
-void CounterFactualRegretMinimizer<S, T>::load(std::string filename) {
+template <class S>
+void CounterFactualRegretMinimizer<S>::load(std::string filename) {
   std::ifstream file(filename);
   std::string buffer;
+
+  // read the final strategy
   std::getline(file, buffer);
-  if (buffer != "STRATEGIES") {
+  if (buffer != "PROBABILITIES") {
+    std::cerr << "Could not parse file " << filename << std::endl;
     return;
   }
-  aggregateStrategies.clear();
   for (int player = 0; player < numPlayers; ++player) {
-    aggregateStrategies.push_back(std::unordered_map<std::string,std::vector<double>>());
     std::getline(file, buffer); //discard line
     std::getline(file, buffer);
     while (buffer != "END") {
-      std::stringstream line(buffer);
-      std::string key;
+      std::getline(file, buffer);
+    }
+  }
+
+  // read the raw data for the aggregate strategies
+  std::getline(file, buffer);
+  if (buffer != "STRATEGIES") {
+    std::cerr << "Could not parse file " << filename << std::endl;
+    return;
+  }
+  aggregateStrategies = {};
+  for (int player = 0; player < numPlayers; ++player) {
+    aggregateStrategies.push_back(
+      std::unordered_map<std::string,std::vector<double>>());
+    std::getline(file, buffer); //discard line
+    std::getline(file, buffer);
+    while (buffer != "END") {
+      const std::size_t delim_index = buffer.find_first_of('\t');
+      const std::string key = buffer.substr(0, delim_index);
+      std::stringstream line(buffer.substr(delim_index));
       std::vector<double> value;
-      line >> key;
       while (line.good()) {
-	double entry;
-	line >> entry;
-	value.push_back(entry);
+        double entry;
+        line >> entry;
+        value.push_back(entry);
       }
       aggregateStrategies[player][key] = value;
       std::getline(file, buffer);
     }
   }
+
+  // read the raw data for the aggregate regrets
   std::getline(file, buffer);
   if (buffer != "REGRETS") {
+    std::cerr << "Could not parse file " << filename << std::endl;
     return;
   }
-  aggregateRegrets.clear();
+  aggregateRegrets = {};
   for (int player = 0; player < numPlayers; ++player) {
-    aggregateRegrets.push_back(std::unordered_map<std::string,std::vector<double>>());
+    aggregateRegrets.push_back(
+      std::unordered_map<std::string,std::vector<double>>());
     std::getline(file, buffer);
     std::getline(file, buffer); //discard line
     while (buffer != "END") {
-      std::stringstream line(buffer);
-      std::string key;
+      const std::size_t delim_index = buffer.find_first_of('\t');
+      const std::string key = buffer.substr(0, delim_index);
+      std::stringstream line(buffer.substr(delim_index));
       std::vector<double> value;
-      line >> key;
       while (line.good()) {
-	double entry;
-	line >> entry;
-	value.push_back(entry);
+        double entry;
+        line >> entry;
+        value.push_back(entry);
       }
       aggregateRegrets[player][key] = value;
       std::getline(file, buffer);
     }
   }
 }
-
-#endif
