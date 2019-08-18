@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 
@@ -262,7 +263,7 @@ void CounterFactualRegretMinimizer<S>::save(std::string filename) {
   for (int player = 0; player < numPlayers; ++player) {
     file << "PLAYER: " << player << std::endl;
     for (const auto& it : aggregateStrategies[player]) {
-      file << it.first;
+      file << it.first << "\t";
       const double total = std::accumulate(it.second.begin(), it.second.end(),
                                            0.0);
       for (double value : it.second) {
